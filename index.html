@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Práctica UT08 Almacenamiento</title>
+  <meta charset="UTF-8">
+	<meta name="author" content="Guillermo Rodriguez Moraga">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <!-- Personalizado -->
+	<link rel="stylesheet" href="css/mi_css.css">  
+</head>
+<body>
+  <!-- Cabecera -->
+  <header class="container-fluid">
+    <!-- BARRA DE NAVEGACION HORIZONTAL -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+          <a class="navbar-brand" href="index.html">GUIROMO <small>CHANNEL</small></a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item">
+                <a id="saludo" class="nav-link text-white" href="javascript:void(0)">&nbsp;</a>
+              </li>
+              <!-- Se muestra si no ha iniciado sesion, sino esta oculto -->
+              <div id="formInicio">
+                <form name="inicioSesion" class="form-inline" action="#" onsubmit="validarUsuario(); return false" method="post">
+                  <div class="form-group">
+                    <input type="text" class="form-control-sm mx-1" name="usuarioForm" id="usuarioForm" placeholder="Usuario">
+                    <div class="invalid-tooltip"></div>
+                  </div>
+                  <div class="form-group">
+                    <input type="password" class="form-control-sm mx-1" name="passForm" id="passForm" placeholder="Contraseña">
+                  </div>
+                  <button type="submit" class="btn btn-sm btn-primary">Entrar</button>
+                </form>
+              </div>
+              <!-- Se muestra si se ha iniciado sesion, sino esta oculto -->
+              <div id="btnCuenta">
+                <li class="nav-item">
+                  <button type="button" class="btn btn-primary" onclick="document.cookie = 'userMail=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'; checkCookie(); showHomePage();">Cerrar Sesion</a>
+                </li>
+              </div>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    <!-- FIN BARRA DE NAVEGACION HORIZONTAL -->
+  </header>
+  <!-- COMIENZO CONTENIDO PRINCIPAL -->
+  <main class="container">
+    <!-- MODAL QUE SE MUESTRA SOLO AL REALIZAR BIEN LAS OPERACIONES -->
+      <div class="modal fade" id="exitoModal" tabindex="-1" role="dialog" aria-labelledby="exito" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exito">¡EXITO!</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>La operacion se ha realizado correctamente</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <!-- MIGAS DE PAN -->
+    <nav aria-label="breadcrumb" class="migas">
+      <div class="d-flex mb-3 rounded">
+        <ol id="breadcrumb" class="breadcrumb w-75">
+          <!-- AQUI VAN LAS MIGAS DE PAN -->
+        </ol>
+        <ol id="navMigas" class="breadcrumb clearfix w-25">
+            <!-- AQUI VAN LAS MIGAS DE PAN -->
+        </ol>
+      </div>
+    </nav>
+    <ul id="menuEdicion" class="nav nav-pills nav-fill bg-dark my-3 rounded">
+      <li class="nav-item dropdown">
+        <a class="nav-link link-1 dropbtn btn btn-dark" href="javascript:void(0)">CATEGORIAS</a>
+        <div class="dropdown-content">
+          <a href="javascript:void(0)" onclick="formCategorias('add')">Añadir categoria</a>
+          <a href="javascript:void(0)" onclick="formCategorias('delete')">Eliminar categoria</a>
+          <a href="javascript:void(0)" onclick="formCategorias('update')">Modificar categoria</a>
+        </div>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link link-1 dropbtn btn btn-dark" href="javascript:void(0)">ACTORES</a>
+        <div class="dropdown-content">
+          <a href="javascript:void(0)" onclick="formActoresDirectores('add','Actor')">Añadir actor/actriz</a>
+          <a href="javascript:void(0)" onclick="formActoresDirectores('delete','Actor')">Eliminar actor/actriz</a>
+          <a href="javascript:void(0)" onclick="formActoresDirectores('update','Actor')">Modificar actor/actriz</a>
+        </div>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link link-1 dropbtn btn btn-dark" href="javascript:void(0)">DIRECTORES</a>
+        <div class="dropdown-content">
+          <a href="javascript:void(0)" onclick="formActoresDirectores('add','Director')">Añadir director/a</a>
+          <a href="javascript:void(0)" onclick="formActoresDirectores('delete','Director')">Eliminar director/a</a>
+          <a href="javascript:void(0)" onclick="formActoresDirectores('update','Director')">Modificar director/a</a>
+        </div>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link link-1 dropbtn btn btn-dark" href="javascript:void(0)">PRODUCCIONES</a>
+        <div class="dropdown-content">
+          <a href="javascript:void(0)" onclick="formProducciones('add')">Añadir produccion</a>
+          <a href="javascript:void(0)" onclick="formProducciones('delete')">Eliminar produccion</a>
+        </div>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link link-1 dropbtn btn btn-dark" href="javascript:void(0)">RECURSOS</a>
+        <div class="dropdown-content">
+            <a href="javascript:void(0)" onclick="formRecursos('add')">Añadir recurso</a>
+            <a href="javascript:void(0)" onclick="formRecursos('delete')">Eliminar recurso</a>
+        </div>
+      </li>
+    </ul>
+    <div id="contenidoCentral">
+      <div class="row">
+        <!-- COLUMNA DEL MENU LAS CATEGORIAS-->
+        <div id="columnaCategorias" class="col-md-3">
+          <h1 class="my-4 text-center">Menu</h1>
+          <ul class="nav nav-pills flex-column">
+            <li class="nav-item">
+              <button id="btnCategorias" type="button" data-toggle="collapse" href="#menuCategorias" class="list-group-item botonMenu btn-lg btn-block"><b>Categorias +</b></button>
+              <div id="menuCategorias" class="collapse">
+                <ul class="nav flex-column mx-2">
+                <!-- AQUI SE MUESTRAN TODAS LAS CATEGORIAS DEL SISTEMA -->
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <button id="btnActores" type="button" class="list-group-item botonMenu btn-lg btn-block"><b>Actores</b></button>
+            </li>
+            <li class="nav-item">
+              <button id="btnDirectores" type="button" class="list-group-item botonMenu btn-lg btn-block"><b>Directores</b></button>
+            </li>
+            <hr>
+            <div id="contenedor" class="cronometro">
+              <span class="reloj hms" id="Horas"></span>
+              <span class="reloj hms" id="Minutos"></span>
+              <span class="reloj hms" id="Segundos"></span>
+              <span class="reloj hms" id="Centesimas"></span><br>
+              <button type="button" class="btn btn-link" id="inicio" onclick="inicio();"><span class="fas fa-play"></span></button>
+              <button type="button" class="btn btn-link" id="parar" onclick="parar();" disabled><span class="fas fa-pause"></span></button>
+              <button type="button" class="btn btn-link" id="reinicio" onclick="reinicio();"><span class="fas fa-redo-alt"></span></button>
+            </div>
+          </ul>
+        </div>
+        <!-- COLUMNA DEL CONTENIDO PRINCIPAL-->
+        <div id="columnaContenido" class="col-md-9">
+          <h1 id="tituloZona" class="mb-4 mt-2"></h1>
+          <div id="tarjetasZona" class="row">
+              
+            <!-- AQUI SE MUESTRA TODA LA INFORMACION DE LA PAGINA -->
+      
+          </div>   
+        </div>
+      </div><!-- fin del div row -->
+    </div><!-- fin de div id central -->
+    <div id="contenidoFormularios" class="d-none">
+      <!-- AQUI SE MUESTRAN LOS FORMULARIOS -->
+    </div>
+  </main>
+  <!-- FIN CONTENIDO PRINCIPAL -->
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->  
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  <!-- Personalizado -->
+  <script src="js/ObjetosVideo.js"></script>
+  <script src="js/VideoSystem.js"></script>
+  <script src="js/errores.js"></script>
+  <script src="js/vs.js"></script>
+  <script src="js/validaciones.js"></script>
+  <script src="js/formularios.js"></script>
+  <script src="js/cronometro.js"></script>
+</body>
+</html>

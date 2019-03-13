@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Práctica UT07 Formularios</title>
+  <meta charset="UTF-8">
+	<meta name="author" content="Guillermo Rodriguez Moraga">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"> 
+	<link rel="stylesheet" href="../css/mi_css.css">
+</head>
+<body>
+  <!-- Cabecera -->
+  <header class="container-fluid">
+    <!-- MENU HORIZONTAL -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+          <a class="navbar-brand" href="#">GUIROMO <small>CHANNEL</small></a>
+        </div>
+      </nav>
+    <!-- FIN MENU HORIZONTAL -->
+  </header>
+  <!-- COMIENZO CONTENIDO PRINCIPAL -->
+  <main class="container">
+      <h1 id="tituloZona"></h1>
+      <div id="contenidoZona">       
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="window.close()">Cerrar</button>
+  </main>
+  <!-- FIN CONTENIDO PRINCIPAL -->
+  <script language="javascript">
+    document.onkeydown = function(){ 
+      if(window.event && window.event.keyCode == 116){ 
+          window.event.keyCode = 505; 
+      }
+      if(window.event && window.event.keyCode == 505){ 
+        return false;    
+      } 
+    } //Fin de la funcion
+
+    function cargaDatos(){
+      //llama a la funcion de showResource de la ventana
+      window.opener.showResource();
+    }
+    window.onload = cargaDatos;
+  </script>
+  </body>
+</html>
