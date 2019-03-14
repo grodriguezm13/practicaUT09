@@ -1,0 +1,40 @@
+{
+    "categorias":[
+        {"name":"Comedia","description":"Películas realizadas con la intención de provocar humor, entretenimiento y/o risa en el espectador."},
+        {"name":"Romance","description":"Un desarrollo romántico o amoroso entre dos personas. Puede acabar bien o mal"},
+        {"name":"Terror","description":"Realizadas con la intención de provocar tensión, miedo y/o el sobresalto en la audiencia."},
+        {"name":"Acción","description":"El argumento implica una interacción moral entre el «bien» y el «mal» llevada a su fin por la violencia o la fuerza física"},
+        {"name":"Ciencia Ficción","description":"Se basa en un futuro cercano o muy lejano, donde se logra ver el avance de la tecnología y como ejecuta este en la historia"},
+        {"name":"Drama","description":"Se centran principalmente en el desarrollo de un conflicto entre los protagonistas, o del protagonista con su entorno o consigo mismo"},
+        {"name":"Fantasía","description":"La inexistencia de la tecnología nos da a entender que sucede en un tiempo pasado. La magia y animales mitológicos o sucesos sin una explicación lógica forman parte de este mundo"},
+        {"name":"Musical","description":"Contienen interrupciones en su desarrollo, para dar un breve receso por medio de un fragmento musical cantado o acompañados de una coreografía."},
+        {"name":"Serie B","description":"Así era llamado el cine de baja de la producción realizada entre los años 1930 y 1960, cuando el público podía ver dos o tres películas por un mismo boleto"},
+        {"name":"Animacion","description":"Se caracteriza por no recurrir a la técnica del rodaje de imágenes reales sino a una o más técnicas de animación"}
+    ],
+    "producciones":[
+        {"tipo":"Movie","title":"Vengadores","nationality":"Americana","publication":"2012-06-04T22:00:00.000Z","synopsis":"Superheroes y explosiones","image":null,"resource":{},"locations":{}},
+        {"tipo":"Movie","title":"Aterriza como puedas","nationality":"Americana","publication":"1980-06-04T22:00:00.000Z","synopsis":"Se complica la cosa cuando van en avion","image":null,"resource":{},"locations":{}},
+        {"tipo":"Movie","title":"Las aventuras de Rita","nationality":"Rusa","publication":"2000-01-04T23:00:00.000Z","synopsis":"La vida no siempre puede ir bien","image":null,"resource":{},"locations":null},
+        {"tipo":"Movie","title":"Los cazafantasmas","nationality":"Americana","publication":"2000-01-04T23:00:00.000Z","synopsis":"Unos cazafantasmas están en su mero apogeo, al tratar de evitar que un demonio haga contacto con la Tierra.","image":null,"resource":{},"locations":null},
+        {"tipo":"Movie","title":"Mental","nationality":"Española","publication":"2017-01-04T23:00:00.000Z","synopsis":"El Doctor Ruiz tendrá que averiguar quien ha sido el asesino del crimen cometido en el psiquiátrico","image":null,"resource":{},"locations":null},
+        {"tipo":"Movie","title":"Sharknado","nationality":"Americana","publication":"2005-01-04T23:00:00.000Z","synopsis":"Un huracan de tiburones acecha a la tierra","image":null,"resource":{},"locations":null},
+        {"tipo":"Movie","title":"LaLaLand","nationality":"Americana","publication":"2018-01-04T23:00:00.000Z","synopsis":"Sebastian, un pianista de jazz, y Mia, una aspirante a actriz, se enamoran locamente; pero la ambición desmedida que tienen por triunfar en sus respectivas carreras, en una ciudad como Los Ángeles, repleta de competencia y carente de piedad, pone en peligro su amor.","image":null,"resource":{},"locations":null},
+        {"tipo":"Serie","title":"El Mago Invisible visible","nationality":"Francesa","publication":"2010-06-04T22:00:00.000Z","synopsis":"Un mago se cree invisible pero no lo es","image":"http://www.guiromo.es/resource6","season":[{},{}]},
+        {"tipo":"Serie","title":"Juego de Gnomos","nationality":"Americana","publication":"2016-06-04T22:00:00.000Z","synopsis":"Movidas raras","image":"http://www.guiromo.es/resource21","season":[{},{},{}]},
+        {"tipo":"Serie","title":"The Flash","nationality":"Americana","publication":"2014-06-04T22:00:00.000Z","synopsis":"Barry Allen obtiene supervelocidad en una accidente, pero no es el unico","image":"http://www.guiromo.es/resource21","season":[{},{},{}]},
+        {"tipo":"Serie","title":"El bisonte","nationality":"Rusa","publication":"2010-06-04T22:00:00.000Z","synopsis":"Un bisonte con un don para el canto","image":"http://www.guiromo.es/resource21","season":[{},{},{}]}     
+    ],
+    "actores":[
+        {"name":"Guillermo","lastName1":"Rodriguez","lastName2":"Moraga","born":"1993-10-24T23:00:00.000Z","completo":"Guillermo Rodriguez Moraga"},
+        {"name":"Barry","lastName1":"Allen","lastName2":" ","born":"1993-06-14T22:00:00.000Z","completo":"Barry Allen  "},
+        {"name":"Manolo","lastName1":"Leon","lastName2":" ","born":"1997-02-24T23:00:00.000Z","completo":"Manolo Leon  "},
+        {"name":"Robert","lastName1":"Downey","lastName2":"Jr.","born":"1964-10-24T23:00:00.000Z","completo":"Robert Downey Jr."},
+        {"name":"Emma","lastName1":"Frost","lastName2":" ","born":"1963-10-24T23:00:00.000Z","completo":"Emma Frost  "}
+    ],
+    "directores":[
+        {"name":"Marco","lastName1":"Mendez","lastName2":"Moraga","born":"1993-11-24T23:00:00.000Z","completo":"Marco Mendez Moraga"},
+        {"name":"Ramon","lastName1":"Diaz","lastName2":" ","born":"1945-02-24T23:00:00.000Z","completo":"Ramon Diaz  "},
+        {"name":"Mark","lastName1":"Rufallo","lastName2":" ","born":"1993-10-24T23:00:00.000Z","completo":"Mark Rufallo  "},
+        {"name":"Jonah","lastName1":"Jameson","lastName2":"J","born":"1943-10-24T23:00:00.000Z","completo":"Jonah Jameson J"}
+    ]
+}

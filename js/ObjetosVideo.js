@@ -104,11 +104,7 @@ function Person(name, lastName1, born, lastName2 = null, picture = null) {
 		},
 		set:function(value){
 			value = typeof completo !== 'undefined' ? value : "";
-		    if (value === ""){
-                throw new EmptyValueException("picture");
-            }else{
-                _completo = value;
-            }//Fin del if
+            _completo = value;
         }	
     });
 }//Fin de Person
@@ -123,7 +119,7 @@ Person.prototype.getObject = function(){
 		lastName1: this.lastName1,
 		lastName2: this.lastName2,
 		born: this.born,
-		image: this.image,
+		picture: this.picture,
 		completo: this.completo
 	};
 };
@@ -459,10 +455,28 @@ Resource.prototype.getObject = function(){
 			publication: this.publication,
 			synopsis: this.synopsis,
 			image: this.image,
-			resource: this.resource,
-			locations: this.locations
+			resource: devolverResource(this.resource),
+			locations: devolverLocation(this.locations)
 		};
 	};
+
+	//Devuelve el objeto literal del recursos, si existe
+	function devolverResource(resource){
+		if (resource instanceof Resource){
+			return resource.getObject();
+		}else{
+			return "";
+		}//Fin del if
+	}//Fin de devolverResource
+
+	//Devuelve el objeto literal de la localizacion, si existe
+	function devolverLocation(location){
+		if (location instanceof Coordinate){
+			return location.getObject();
+		}else{
+			return "";
+		}//Fin del if
+	}//Fin de devolverResource
 
 	//Definimos la subclase serie que hereda de Production y representa un recurso serie que podremos reproducir
 	function Serie(title, nationality, publication, synopsis, image, seasons = null){
@@ -515,9 +529,18 @@ Resource.prototype.getObject = function(){
 			publication: this.publication,
 			synopsis: this.synopsis,
 			image: this.image,
-			season: this.season,
+			season: devolverSeason(this.season)
 		};
 	};
+
+	//Devuelve el objeto literal de la temporada, si existe
+	function devolverSeason(season){
+		if (season instanceof Season){
+			return season.getObject();
+		}else{
+			return "";
+		}//Fin del if
+	}//Fin de devolverSeason
 
 	abstractCreateLock = true; //Activamos el seguro
 

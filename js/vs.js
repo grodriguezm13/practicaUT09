@@ -1,10 +1,3 @@
-//Se crea el objeto VideoSystem y se le añade el nombre 
-try {
-	var video = VideoSystem.getInstance();
-	video.name = "GUIROMO CHANNEL";
-} catch (error) {
-	console.log("" + error);
-}
 //Array para guardar los recursos del sistema
 var arrayRecursos = new Array();
 //Array para guardar las temporadas del sistema
@@ -51,7 +44,8 @@ function addValues(tabla,array) {
 			// Guarda los datos en el almacén recién creado.
 			var addObjectStore = db.transaction([tabla],"readwrite").objectStore(tabla);
 			for (var i in array) {
-				addObjectStore.add(array[i].getObject());
+				//Se parsea el objeto recibido del JSON
+				addObjectStore.add(array[i]);
 			}
 		};//Fin de tablaCategorias.transaction.oncomplete
 	};//Fin de request.onsuccess
@@ -59,234 +53,50 @@ function addValues(tabla,array) {
 
 //Funcion que inicializa todos los objetos y la relacion entre ellos
 function initPopulate(){	
-	/* INICIO DE LA CREACION DE OBJETOS */ 
-	//Se crean los objetos person
+	var arrayCat = new Array();
+	var arrayPro = new Array();
+	var arrayAct = new Array();
+	var arrayDir = new Array();
+	//SE leen los datos iniciales del fichero JSON
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var myObj = JSON.parse(this.responseText);
+			//Para cada array del videosystem
+			for(i in myObj.categorias){
+				//Se guardan los valores en el array 
+				arrayCat.push(myObj.categorias[i]);
+			}//Fin del for exterior
+			for(i in myObj.producciones){
+				//Se guardan los valores en el array
+				arrayPro.push(myObj.producciones[i]);
+			}//Fin del for exterior
+			for(i in myObj.actores){
+				//Se guardan los valores en el array
+				arrayAct.push(myObj.actores[i]);
+			}//Fin del for exterior
+			for(i in myObj.directores){
+				//Se guardan los valores en el array
+				arrayDir.push(myObj.directores[i]);
+			}//Fin del for exterior
+			//Se añaden los valores a la base de datos
+			addValues("categorias",arrayCat);
+			addValues("producciones",arrayPro);
+			addValues("actores",arrayAct);
+			addValues("directores",arrayDir);
+		}//FIn del if
+	};// fin de xmlhttp.onreadystatechange
+	xmlhttp.open("GET", "js/datos.json", true);
+	xmlhttp.send();
+
+	//Se crea el objeto VideoSystem y se le añade el nombre 
 	try {
-		var persona = new Person("Guillermo","Rodriguez",new Date(1993,09,25),"Moraga");
-		var persona1 = new Person("Barry","Allen",new Date(1993,05,15));
-		var persona2 = new Person("Marco","Mendez",new Date(1993,10,25),"Moraga","c://imagenes/usuario213123.jpg");
-		var persona3 = new Person("Ramon","Diaz",new Date(1945,01,25));
-		var persona4 = new Person("Manolo","Leon",new Date(1997,01,25));
-		var persona5 = new Person("Robert","Downey",new Date(1964,09,25),"Jr.");
-		var persona6 = new Person("Mark","Rufallo",new Date(1993,09,25));
-		var persona7 = new Person("Emma","Frost",new Date(1963,09,25));
-		var persona8 = new Person("Jonah","Jameson",new Date(1943,09,25),"J");
-	} catch (error) {
-		console.log("" + error);
-	}
-    //Se crean los objetos category
-	try {
-		var category = new Category("Comedia" , "Películas realizadas con la intención de provocar humor, entretenimiento y/o risa en el espectador.");
-		var category1 = new Category("Romance" , "Un desarrollo romántico o amoroso entre dos personas. Puede acabar bien o mal");
-		var category2 = new Category("Terror" , "Realizadas con la intención de provocar tensión, miedo y/o el sobresalto en la audiencia.");
-		var category3 = new Category("Acción" , "El argumento implica una interacción moral entre el «bien» y el «mal» llevada a su fin por la violencia o la fuerza física");
-		var category4 = new Category("Ciencia Ficción","Se basa en un futuro cercano o muy lejano, donde se logra ver el avance de la tecnología y como ejecuta este en la historia");
-		var category5 = new Category("Drama", "Se centran principalmente en el desarrollo de un conflicto entre los protagonistas, o del protagonista con su entorno o consigo mismo");
-		var category6 = new Category("Fantasía" , "La inexistencia de la tecnología nos da a entender que sucede en un tiempo pasado. La magia y animales mitológicos o sucesos sin una explicación lógica forman parte de este mundo");
-		var category7 = new Category("Musical" , "Contienen interrupciones en su desarrollo, para dar un breve receso por medio de un fragmento musical cantado o acompañados de una coreografía.");
-		var category8 = new Category("Serie B" , "Así era llamado el cine de baja de la producción realizada entre los años 1930 y 1960, cuando el público podía ver dos o tres películas por un mismo boleto");
-		var category9 = new Category("Animacion" , "Se caracteriza por no recurrir a la técnica del rodaje de imágenes reales sino a una o más técnicas de animación");
+		video = VideoSystem.getInstance();
+		video.name = "GUIROMO CHANNEL";
 	} catch (error) {
 		console.log("" + error);
 	}
 	
-	//Se crean objetos resource
-	try {
-		var resource = new Resource(180,"http://www.guiromo.es/resource",["Español","Ingles"],["Chino","Japones"]);
-		arrayRecursos.push(resource);
-		var resource1 = new Resource(120,"http://www.guiromo.es/resource1");
-		arrayRecursos.push(resource1);
-		var resource2 = new Resource(25,"http://www.guiromo.es/resource2",["Español","Ingles"],["Ruso","Ingles"]);
-		arrayRecursos.push(resource2);
-		var resource3 = new Resource(50,"http://www.guiromo.es/resource3",["Español","Ingles"],["Aleman","Ingles"]);
-		arrayRecursos.push(resource3);
-	} catch (error) {
-		console.log("" + error);
-	}
-    //Se crea un objeto Coordinate
-	try {
-		var coor = new Coordinate(123,124);
-	} catch (error) {
-		console.log("" + error);
-	}
-    //Se crean objetos Movie
-    try {
-		var movie = new Movie("Vengadores",new Date(2012,05,05),"Americana","Superheroes y explosiones",null,resource,coor);
-		var movie1 = new Movie("Aterriza como puedas",new Date(1980,05,05),"Americana","Se complica la cosa cuando van en avion",null,resource1,coor);
-		var movie2 = new Movie("Las aventuras de Rita",new Date(1999,12,05),"Rusa","La vida no siempre puede ir bien",null,resource2);
-		var movie3 = new Movie("Los cazafantasmas",new Date(1999,12,05),"Americana","Unos cazafantasmas están en su mero apogeo, al tratar de evitar que un demonio haga contacto con la Tierra.",null,resource2);
-		var movie4 = new Movie("Mental",new Date(2016,12,05),"Española","El Doctor Ruiz tendrá que averiguar quien ha sido el asesino del crimen cometido en el psiquiátrico",null,resource2);
-		var movie5 = new Movie("Sharknado",new Date(2004,12,05),"Americana","Un huracan de tiburones acecha a la tierra",null,resource2);
-		var movie6 = new Movie("LaLaLand",new Date(2017,12,05),"Americana","Sebastian, un pianista de jazz, y Mia, una aspirante a actriz, se enamoran locamente; pero la ambición desmedida que tienen por triunfar en sus respectivas carreras, en una ciudad como Los Ángeles, repleta de competencia y carente de piedad, pone en peligro su amor.",null,resource3);
-    } catch (error) {
-        console.log("" + error);
-	}
-	//Se crean objetos User
-	try {
-		var user = new User("pepe","pepe@yo.com","pepe");
-		var user1 = new User("ramon","ramon@yo.com","milady");
-		var user2 = new User("guillermo","guillermo@yo.com","guillermo");
-		var user3 = new User("prueba","prueba@prueba.com","prueba");
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Se crean los objetos Season
-	try {
-		var season = new Season("Temporada 1",["Episodio 1","Episodio 2"]);
-		arraySeason.push(season);
-		var season1 = new Season("Temporada 2",["Episodio 1","Episodio 2"]);
-		arraySeason.push(season1);
-		var season2 = new Season("Temporada 3",["Episodio 1","Episodio 2"]);
-		arraySeason.push(season2);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Se crean los objetos Serie
-	try {
-		var serie = new Serie("El Mago Invisible visible",new Date(2010,05,05),"Francesa","Un mago se cree invisible pero no lo es","http://www.guiromo.es/resource6",[season,season1]);
-		var serie1 = new Serie("Juego de Gnomos",new Date(2016,05,05),"Americana","Movidas raras","http://www.guiromo.es/resource21",[season,season1,season2]);
-		var serie2 = new Serie("The Flash",new Date(2014,05,05),"Americana","Barry Allen obtiene supervelocidad en una accidente, pero no es el unico","http://www.guiromo.es/resource21",[season,season1,season2]);
-		var serie3 = new Serie("El bisonte",new Date(2010,05,05),"Rusa","Un bisonte con un don para el canto","http://www.guiromo.es/resource21",[season,season1,season2]);
-	} catch (error) {
-		console.log("" + error);
-	}
-
-	/* FIN DE LA CREACION DE OBJETOS */
-	/* INICIO DE LAS RELACIONES MEDIANTE LAS FUNCIONES DE VIDEOSYSTEM */
-	//Añadimos las categorias 
-	try {
-		video.addCategory(category);
-		video.addCategory(category1);
-		video.addCategory(category2);
-		video.addCategory(category3);
-		video.addCategory(category4);
-		video.addCategory(category5);
-		video.addCategory(category6);
-		video.addCategory(category7);
-		video.addCategory(category8);
-		video.addCategory(category9);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Se crea el array con las categorias y se pasa a la funcion
-	var arrayCat = [category,category1,category2,category3,category4,category5,category6,category7,category8,category9];
-	addValues("categorias",arrayCat);
-
-	//Añadimos los usuarios
-	try {
-		video.addUser(user);
-		video.addUser(user1);
-		video.addUser(user2);
-		video.addUser(user3);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Añadimos las producciones
-	try {
-		video.addProduction(movie);
-		video.addProduction(movie1);
-		video.addProduction(movie2);
-		video.addProduction(movie3);
-		video.addProduction(movie4);
-		video.addProduction(movie5);
-		video.addProduction(movie6);
-		video.addProduction(serie);
-		video.addProduction(serie1);
-		video.addProduction(serie2);
-		video.addProduction(serie3);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Se crea el array con las producciones y se pasa a la funcion
-	var arrayPro = [movie,movie1,movie2,movie3,movie4,movie5,movie6,serie,serie1,serie2,serie3];
-	addValues("producciones",arrayPro);
-
-	//Añadimos los actores
-	try {
-		video.addActor(persona);
-		video.addActor(persona1);
-		video.addActor(persona4);
-		video.addActor(persona5);
-		video.addActor(persona7);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Se crea el array con los actores y se pasa a la funcion
-	var arrayAct = [persona,persona1,persona4,persona5,persona7];
-	addValues("actores",arrayAct);
-
-	//Añadimos un director
-	try {
-		video.addDirector(persona2);
-		video.addDirector(persona3);
-		video.addDirector(persona6);
-		video.addDirector(persona8);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Se crea el array con los directores y se pasa a la funcion
-	var arrayDir = [persona2,persona3,persona6,persona8];
-	addValues("directores",arrayDir);
-
-	//Asignamos una produccion a una categoria
-	try {
-		video.assignCategory(category,movie);
-		video.assignCategory(category,movie1);
-		video.assignCategory(category,movie3);
-		video.assignCategory(category1,movie6);
-		video.assignCategory(category1,movie2);
-		video.assignCategory(category1,serie1);
-		video.assignCategory(category2,movie2);
-		video.assignCategory(category2,movie4);
-		video.assignCategory(category2,movie5);
-		video.assignCategory(category3,movie);
-		video.assignCategory(category3,movie3);
-		video.assignCategory(category3,movie5);
-		video.assignCategory(category4,serie1);
-		video.assignCategory(category4,serie2);
-		video.assignCategory(category4,movie5);
-		video.assignCategory(category5,movie6);
-		video.assignCategory(category5,movie4);
-		video.assignCategory(category5,movie2);
-		video.assignCategory(category6,serie1);
-		video.assignCategory(category6,serie3);
-		video.assignCategory(category7,movie6);
-		video.assignCategory(category7,serie3);
-		video.assignCategory(category8,movie5);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Asignamos una produccion a un director
-	try {
-		video.assignDirector(persona2,movie);
-		video.assignDirector(persona2,movie1);
-		video.assignDirector(persona3,movie2);
-		video.assignDirector(persona6,movie3);
-		video.assignDirector(persona6,movie4);
-		video.assignDirector(persona8,movie5);
-		video.assignDirector(persona8,movie6);
-	} catch (error) {
-		console.log("" + error);
-	}
-	//Asignamos una produccion a un actorr
-	try {	
-		video.assignActor(persona,movie,"Hulk",true);
-		video.assignActor(persona,movie1,"Ciudadano",false);
-		video.assignActor(persona,movie2,"Nemesio",true);
-		video.assignActor(persona4,movie,"Extra",false);
-		video.assignActor(persona4,movie3,"Ciudadano",false);
-		video.assignActor(persona5,movie4,"Ciudadano",false);
-		video.assignActor(persona5,movie5,"Ciudadano",false);
-		video.assignActor(persona5,movie6,"Ciudadano",false);
-		video.assignActor(persona7,movie5,"Ciudadano",false);
-		video.assignActor(persona7,movie6,"Ciudadano",false);
-		video.assignActor(persona1,serie,"Mago Invisible",true);
-		video.assignActor(persona1,serie1,"Extra",false);
-		video.assignActor(persona1,serie2,"Barry Allen/The Flash",true);	
-		video.assignActor(persona1,serie3,"Ciudadano",false);
-	} catch (error) {
-		console.log("" + error);
-	}
 }//Fin de initPopulate
 
 //Funcion que actualiza las migas de pan
@@ -1269,15 +1079,20 @@ function showResource(){
 
 //Funcion que llama a todas las funciones que necesita el sistema
 function init(){
-	//Crea la base de datos y las tablas
+	//Llama a la funcion para crear la base de datos
 	crearTablas();
 	//Instancia los objetos y los mete en la tabla
 	initPopulate();
-	//Muestra el contenido de la pagina
-	showHomePage();
-	categoriesMenuPopulate();
+	//Muestra el contenido de la pagina con retardo para 
+	//darle tiempo a la base de datos
+	window.setTimeout(InitialPage,100);
 	//Esta funcion esta en el archivo formularios.js
 	checkCookie();
 }//Fin de init
+
+function InitialPage(){
+	showHomePage();
+	categoriesMenuPopulate();
+}
 
 window.onload = init;
