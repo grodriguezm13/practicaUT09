@@ -26,6 +26,9 @@ function crearTablas(){
 
 		//Creacion de la tabla directores
 		active.createObjectStore("directores", { keyPath: 'completo' });
+
+		//Creacion de la tabla usuarios
+		active.createObjectStore("usuarios", { keyPath: 'email' });
 	};//FIn del dataBase.onupgradeneeded
 }//FIn de baseIndexed
 
@@ -57,6 +60,7 @@ function initPopulate(){
 	var arrayPro = new Array();
 	var arrayAct = new Array();
 	var arrayDir = new Array();
+	var arrayUser = new Array();
 	//SE leen los datos iniciales del fichero JSON
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
@@ -79,11 +83,16 @@ function initPopulate(){
 				//Se guardan los valores en el array
 				arrayDir.push(myObj.directores[i]);
 			}//Fin del for exterior
+			for(i in myObj.usuarios){
+				//Se guardan los valores en el array
+				arrayUser.push(myObj.usuarios[i]);
+			}//Fin del for exterior
 			//Se añaden los valores a la base de datos
 			addValues("categorias",arrayCat);
 			addValues("producciones",arrayPro);
 			addValues("actores",arrayAct);
 			addValues("directores",arrayDir);
+			addValues("usuarios",arrayUser);
 		}//FIn del if
 	};// fin de xmlhttp.onreadystatechange
 	xmlhttp.open("GET", "js/datos.json", true);

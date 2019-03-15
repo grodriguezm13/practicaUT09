@@ -11,24 +11,34 @@ function validarUsuario(){
 
 	//Si ha introducido algo en los campos
 	if (nombre != "" && pass != "") {
-		//Usa el iterador de usuario
-		var usuarios = video.users;
-		var usuario = usuarios.next();
-		while ((usuario.done !== true) && !encontrado){
-			if(usuario.value.userName == nombre.trim() && usuario.value.password == pass.trim()){
-				setCookie("userMail", usuario.value.email, 1);
-				encontrado = true;
-			}
-			usuario = usuarios.next();
-		}//Fin del while iterador
+		//Abre la conexion con la base de datos categorias
+		var request = indexedDB.open(nombreDB);
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;         
+			var objectStore = db.transaction(["usuarios"],"readonly").objectStore("usuarios");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var cursor = event.target.result;
+				if (cursor && !encontrado){
+					var usuario = new User (cursor.value.userName, cursor.value.email, cursor.value.password);
+					if(usuario.userName == nombre.trim() && usuario.password == pass.trim()){
+						setCookie("userMail", usuario.email, 1);
+						encontrado = true;
+						menuExtra.style.display = "flex";
+						error.style.display = "none";
+						checkCookie();
+					}//Fin del if
+					//Pasa a la siguiente categoria
+					cursor.continue();
+				}//Fin del if del cursor
+			};//FIn de objectStore.openCursor().onsuccess
+		};//Fin de request.onsuccess		
 	}else{
 		encontrado = false;
 	}
-	if (encontrado) {
-		menuExtra.style.display = "flex";
-		error.style.display = "none";
-		checkCookie();
-	} else if(!encontrado){
+	 if(!encontrado){
 		error.style.display = "inline";
 		error.textContent = "EL usuario o contraseña son erroneos";
 	}

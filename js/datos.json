@@ -36,5 +36,11 @@
         {"name":"Ramon","lastName1":"Diaz","lastName2":" ","born":"1945-02-24T23:00:00.000Z","completo":"Ramon Diaz  "},
         {"name":"Mark","lastName1":"Rufallo","lastName2":" ","born":"1993-10-24T23:00:00.000Z","completo":"Mark Rufallo  "},
         {"name":"Jonah","lastName1":"Jameson","lastName2":"J","born":"1943-10-24T23:00:00.000Z","completo":"Jonah Jameson J"}
+    ],
+    "usuarios":[
+        {"userName":"pepe","email":"pepe@yo.com","password":"pepe"},
+        {"userName":"ramon","email":"ramon@yo.com","password":"milady"},
+        {"userName":"guillermo","email":"guillermo@yo.com","password":"guillermo"},
+        {"userName":"prueba","email":"prueba@prueba.com","password":"prueba"}
     ]
 }
