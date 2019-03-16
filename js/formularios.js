@@ -2495,20 +2495,26 @@ function validarProducciones(){
 		if (tituloValido && publicacionValida && nacionalidadValida && sipnosisValida && imagenValida && longitudValida && latitudValida && directorValido && categoriasValida) {
 			//Se recogen y cran los ultimos parametros para la funcion
 			var selectRecurso = document.forms["addProduction"]["recurso"].value;
-			if (selectRecurso != "0") {
-				//Se busca el recurso y se crea
-				for (let index = 0; index < arrayRecursos.length; index++) {
-					if (arrayRecursos[index].link == selectRecurso) {
-						var recurso = new Resource(arrayRecursos[index].duration, arrayRecursos[index].link, arrayRecursos[index].audios, arrayRecursos[index].subtitles);
+			//Abre la conexion con la base de datos actores
+			var request = indexedDB.open(nombreDB);
+			//Si ha salido bien
+			request.onsuccess = function(event) {
+				//Asigna el resultado a la variable db, que tiene la base de datos 
+				var db = event.target.result;         
+				var objectStore = db.transaction(["recursos"],"readonly").objectStore("recursos");
+				//Obtiene el objeto de la base de datos
+				var objeto = objectStore.get(selectRecurso);
+				objeto.onsuccess = function(event) {
+					var recurso1 = objeto.result;
+					var resource1 = new Resource (recurso1.duration, recurso1.link, recurso1.audios, recurso1.subtitles);
+					var coor = null;
+					if(latitud.value != "" && longitud.value != ""){
+						var coor = new Coordinate(latitud.value,longitud.value);
 					}
+					//Llama a la funcion con los parametros recogidos, los demas son nulos
+					addNewProduction(tipo, titulo.value, fecha, nacionalidad.value, sipnosis.value, imagen.value, resource1, coor, null);
 				}
-			}//Fin del if de recursos
-			var coor = null;
-			if(latitud.value != "" && longitud.value != ""){
-				var coor = new Coordinate(latitud.value,longitud.value);
-			}
-			//Llama a la funcion con los parametros recogidos, los demas son nulos
-			addNewProduction(tipo, titulo.value, fecha, nacionalidad.value, sipnosis.value, imagen.value, recurso || null, coor, null);
+			};
 		}else{
 			return false;
 		}//Fin del if
@@ -2580,9 +2586,9 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 									//añade la produccion del array
 									cursor.value.productions.push(objetoProduction.getObject());
 								}
+								var nuevo = { category: cursor.value.category , productions: cursor.value.productions};
+								cursor.update(nuevo);
 							}
-							var nuevo = { category: cursor.value.category , productions: cursor.value.productions};
-							cursor.update(nuevo);
 							//Pasa a la siguiente categoria
 							cursor.continue();
 						}//Fin del if
@@ -2590,14 +2596,14 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 				};
 
 				//AÑADE EL DIRECTOR A LA PRODUCCION
-				var request = indexedDB.open(nombreDB);
+				var request2 = indexedDB.open(nombreDB);
 				//Si ha salido bien
-				request.onsuccess = function(event) {
+				request2.onsuccess = function(event) {
 					//Asigna el resultado a la variable db, que tiene la base de datos 
-					var db = event.target.result;         
-					var objectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+					var db2 = event.target.result;         
+					var objectStore2 = db2.transaction(["directorPro"],"readwrite").objectStore("directorPro");
 					//Abre un cursor para recorrer todos los objetos de la base de datos 
-					objectStore.openCursor().onsuccess = function(event) {
+					objectStore2.openCursor().onsuccess = function(event) {
 						var cursor = event.target.result;
 						if(cursor){
 							//for (let i = 0; i < cursor.value.productions.length; i++) {
@@ -2617,14 +2623,14 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 				//Se asignan el reparto a la produccion si hay
 				if (arrayReparto.length > 0) {
 					//AÑADE EL REPARTO DE LA PRODUCCION
-					var request = indexedDB.open(nombreDB);
+					var request3 = indexedDB.open(nombreDB);
 					//Si ha salido bien
-					request.onsuccess = function(event) {
+					request3.onsuccess = function(event) {
 						//Asigna el resultado a la variable db, que tiene la base de datos 
-						var db = event.target.result;         
-						var objectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+						var db3 = event.target.result;         
+						var objectStore3 = db3.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
 						//Abre un cursor para recorrer todos los objetos de la base de datos 
-						objectStore.openCursor().onsuccess = function(event) {
+						objectStore3.openCursor().onsuccess = function(event) {
 							var cursor = event.target.result;
 							if(cursor){
 								for (let i = 0; i < arrayReparto.length; i++) {
@@ -2635,9 +2641,9 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 										//añade la produccion del array
 										cursor.value.productions.push({produccion: objetoProduction.getObject(), papel: papel, principal: principal});
 									}
+									var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+									cursor.update(nuevo);
 								}
-								var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
-								cursor.update(nuevo);
 								//Pasa al siguiente director
 								cursor.continue();
 							}//Fin del if

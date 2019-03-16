@@ -10,6 +10,11 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.0.5
+- Se ha creado un boton para ver todas las producciones del sistema
+- Se ha arreglado un fallo al mostrar la etiqueta del tipo de produccion a la hora de m,ostrar las tarjetas
+- Solucionado un error que impedia agregar los recursos a las producciones al crearlas
+
 Version 0.0.4
 - Se han arreglado los fallos al mostrar recursos, directores, actores y categorias al añadir una produccion
 

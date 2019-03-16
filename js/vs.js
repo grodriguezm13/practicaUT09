@@ -345,12 +345,13 @@ function categoriesMenuPopulate(){
 		};//Fin de objectStore.openCursor().onsuccess
 	};//Fin de request.onsuccess
 	
-	//Añade funciones a los bntones de actores y directores
+	//Añade funciones a los bntones de actores, directores y producciones
 	var btnAct = document.getElementById("btnActores");
 	var btnDir = document.getElementById("btnDirectores");
+	var btnPro = document.getElementById("btnProducciones");
 	btnAct.addEventListener("click", showActors);
 	btnDir.addEventListener("click", showDirectors);
-
+	btnPro.addEventListener("click", showAllProductions);
 }//Fin de showHomePage
 
 //Muestra un listado con los actores del sistema.
@@ -723,6 +724,98 @@ function showDirector(){
 }//Fin de showDirector
 
 //Dado una categoría, director o actor, muestra el listado de sus producciones.
+function showAllProductions(){
+	//Cambia el titulo de la pagina principal
+	var tituloContenido = document.getElementById("tituloZona");
+	tituloContenido.style.display = "block";
+	//El valor this.value lo recoge del valor del boton que hayamos pulsado
+	tituloContenido.innerHTML = "Producciones del sistema";
+
+	//Actualiza las migas de pan
+	breadcrumb("Producciones",null,"Producciones");
+
+	//Se selecciona la zona donde va a ir el nuevo contenido
+	var contenido = document.getElementById("tarjetasZona");
+
+	//QUITA TODO EL CONTENIDO QUE HAYA EN LA VARIABLE CONTENIDO
+	while (contenido.firstChild) {
+		contenido.removeChild(contenido.firstChild);
+	}
+	
+	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER LAS PRODUCCIONES 
+	//Abre la conexion con la base de datos
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var objectStore = db.transaction(["producciones"],"readonly").objectStore("producciones");
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objectStore.openCursor().onsuccess = function(event) {
+			var produccion = event.target.result;
+			//Si el cursor devuelve un valor pinta las tarjetas
+			if (produccion) {
+				//Crea las tarjetas de las producciones en la zona central
+				var tarjeta = document.createElement("div");
+				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
+				tarjeta.setAttribute("id",produccion.value.title);	
+				tarjeta.addEventListener("click", showProduction);
+				var borde = document.createElement("div");
+				borde.setAttribute("class","card h-100");
+				var cuerpo = document.createElement("div");
+				cuerpo.setAttribute("class","card-body");
+				var imagen = document.createElement("img");
+				imagen.setAttribute("class","card-img");
+				var tipo = document.createElement("span");
+				tipo.setAttribute("class","card-text");
+				if(produccion.value.tipo == "Movie"){
+					tipo.appendChild(document.createTextNode("Pelicula"));
+				}else{
+					tipo.appendChild(document.createTextNode("Serie"));
+				}
+				imagen.setAttribute("width","750");
+				imagen.setAttribute("heigh","200");
+				/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
+				//imagen.setAttribute("src","img/"+production.value.title+".jpg");
+				imagen.setAttribute("src","img/Portada.jpg");
+				imagen.setAttribute("alt",produccion.value.title);
+				var buttonTitle = document.createElement("button");
+				//id que sirve para recoger la produccion pulsada en el evento
+				buttonTitle.setAttribute("id","botonProduccion");
+				buttonTitle.setAttribute("type","button");
+				buttonTitle.setAttribute("value",produccion.value.title);
+				buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
+				buttonTitle.appendChild(document.createTextNode(produccion.value.title));	
+				var descripProduction = document.createElement("p");
+				descripProduction.setAttribute("class","card-text");
+				/* ESTA LINEA CAMBIA LA DESCRIPCION DE LAS TARJETAS */ 
+				descripProduction.appendChild(document.createTextNode(produccion.value.synopsis));
+				var valoracion = document.createElement("div");
+				valoracion.setAttribute("class","card-footer");
+				var estrellas = document.createElement("small");
+				estrellas.setAttribute("class","text-muted");
+				/* ESTA LINEA CAMBIA LAS ESTRELLAS QUE SE MUESTRAN EN LAS TARJETAS (PROXIMA VERSION)?*/ 
+				estrellas.appendChild(document.createTextNode('Valoracion'));
+
+				//Se crea la estructura de las tarjetas con appendChild
+				contenido.appendChild(tarjeta);
+				tarjeta.appendChild(borde);
+				borde.appendChild(cuerpo);
+				cuerpo.appendChild(imagen);
+				cuerpo.appendChild(tipo);
+				cuerpo.appendChild(buttonTitle);
+				cuerpo.appendChild(descripProduction);
+				cuerpo.appendChild(valoracion);
+				valoracion.appendChild(estrellas);
+
+				//Pasa a la siguiente produccion
+				produccion.continue();
+			}
+		};//Fin de objectStore.openCursor().onsuccess
+	};//Fin de request.onsuccess
+}//Fin de showAllProductions
+
+//Dado una categoría, director o actor, muestra el listado de sus producciones.
 function showProductions(){
 	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
 	var nomCat = this.value || this.id;
@@ -770,7 +863,7 @@ function showProductions(){
 				imagen.setAttribute("class","card-img");
 				var tipo = document.createElement("span");
 				tipo.setAttribute("class","card-text");
-				if(producciones[i].tipo = "Movie"){
+				if(producciones[i].tipo == "Movie"){
 					tipo.appendChild(document.createTextNode("Pelicula"));
 				}else{
 					tipo.appendChild(document.createTextNode("Serie"));
