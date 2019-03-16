@@ -10,6 +10,9 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.0.4
+- Se han arreglado los fallos al mostrar recursos, directores, actores y categorias al añadir una produccion
+
 Version 0.0.3
 - Las relaciones se han añadido al fichero JSON
 - Se han creado las tablas de relaciones

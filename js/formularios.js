@@ -1748,13 +1748,27 @@ function formProducciones(tipo){
 		var optionResource = document.createElement("option");
 		optionResource.setAttribute("value","0");
 		optionResource.appendChild(document.createTextNode("-- SIN RECURSO --"));
-		selectResource.appendChild(optionResource);	
-		for (let index = 0; index < arrayRecursos.length; index++) {
-			optionResource = document.createElement("option");
-			optionResource.setAttribute("value",arrayRecursos[index].link);
-			optionResource.appendChild(document.createTextNode(arrayRecursos[index].link));
-			selectResource.appendChild(optionResource);	
-		}//Fin del for	
+		selectResource.appendChild(optionResource);
+		//Abre la conexion con la base de datos
+		var request = indexedDB.open(nombreDB);
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;         
+			var objectStore = db.transaction(["recursos"],"readonly").objectStore("recursos");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var recurso = event.target.result;
+				if (recurso) {
+					optionResource = document.createElement("option");
+					optionResource.setAttribute("value",recurso.value.link);
+					optionResource.appendChild(document.createTextNode(recurso.value.link));
+					selectResource.appendChild(optionResource);
+					//Pasa al siguiente recurso
+					recurso.continue();
+				}
+			};
+		};	
 		divMovie.appendChild(labelResource);
 		divMovie.appendChild(selectResource);
 		//LONGITUD DE LA PRODUCCION MOVIE
@@ -1795,12 +1809,12 @@ function formProducciones(tipo){
 		divInputBtn.setAttribute("class","input-group");
 		var divBtn = document.createElement("div");
 		divBtn.setAttribute("class","input-group-prepend");
-		var botonRemover = document.createElement("button");
-		botonRemover.setAttribute("type","button");
-		botonRemover.setAttribute("class","btn btn-sm btn-outline-secondary");
-		botonRemover.appendChild(document.createTextNode("Remover"));
+		var botonRemoverD = document.createElement("button");
+		botonRemoverD.setAttribute("type","button");
+		botonRemoverD.setAttribute("class","btn btn-sm btn-outline-secondary");
+		botonRemoverD.appendChild(document.createTextNode("Remover"));
 		//añade el evento al hacer click al boton de remover
-		botonRemover.addEventListener("click",function(){
+		botonRemoverD.addEventListener("click",function(){
 			var input = document.forms["addProduction"]["director"];
 				//Quita el ultimo elemento del array
 				arrayDir.pop();
@@ -1817,26 +1831,26 @@ function formProducciones(tipo){
 		var malDirector = document.createElement("small");
 		malDirector.setAttribute("class","form-text text-muted");
 		malDirector.setAttribute("id","directorMal");
-		var divTabla = document.createElement("div");
-		divTabla.setAttribute("id","divTabla");
-		var buscador = document.createElement("input");
-		buscador.setAttribute("class","form-control my-3");
-		buscador.setAttribute("type","text");
-		buscador.setAttribute("id","buscador");
-		buscador.setAttribute("placeholder","Buscar...");
+		var divTablaD = document.createElement("div");
+		divTablaD.setAttribute("id","divTabla");
+		var buscadorD = document.createElement("input");
+		buscadorD.setAttribute("class","form-control my-3");
+		buscadorD.setAttribute("type","text");
+		buscadorD.setAttribute("id","buscador");
+		buscadorD.setAttribute("placeholder","Buscar...");
 		//SE CREA LA TABLA DE LOS DIRECTORES
-		var tabla = document.createElement("table");
-		tabla.setAttribute("class","table table-bordered");
-		tabla.setAttribute("name","tablaDirector");
-		tabla.setAttribute("id","tablaDirector");
-		var thead = document.createElement("thead");
-		var tr = document.createElement("tr");
-		var thVacio = document.createElement("th");
-		var ocultar = document.createElement("button");
-		ocultar.setAttribute("type","button");
-		ocultar.setAttribute("class","btn btn-secondary");
-		ocultar.appendChild(document.createTextNode("Mostrar/Ocultar"));
-		ocultar.addEventListener("click", function(){
+		var tablaD = document.createElement("table");
+		tablaD.setAttribute("class","table table-bordered");
+		tablaD.setAttribute("name","tablaDirector");
+		tablaD.setAttribute("id","tablaDirector");
+		var theadD = document.createElement("thead");
+		var trD = document.createElement("tr");
+		var thVacioD = document.createElement("th");
+		var ocultarD = document.createElement("button");
+		ocultarD.setAttribute("type","button");
+		ocultarD.setAttribute("class","btn btn-secondary");
+		ocultarD.appendChild(document.createTextNode("Mostrar/Ocultar"));
+		ocultarD.addEventListener("click", function(){
 			var cont = document.getElementById("tablaDirectores");
 			if(cont.style.display=="table-row-group"){
 				cont.style.display = "none";
@@ -1844,42 +1858,53 @@ function formProducciones(tipo){
 				cont.style.display = "table-row-group";
 			}
 		});
-		thVacio.appendChild(ocultar);
-		var thNombre = document.createElement("th");
-		thNombre.appendChild(document.createTextNode("Nombre completo"));
-		var tbody = document.createElement("tbody");
-		tbody.setAttribute("id","tablaDirectores");
-		var directores = video.directors;
-		var director = directores.next();
-		while (director.done !== true){
-			var trDir = document.createElement("tr");
-			var tdAdd = document.createElement("td");
-			var add = document.createElement("button");
-			add.setAttribute("type","button");
-			add.setAttribute("class","btn btn-danger");
-			if (director.value.lastName2 == null) {
-				director.value.lastName2 = " ";
-			}
-			add.setAttribute("value",director.value.name+" "+director.value.lastName1+" "+director.value.lastName2);
-			add.appendChild(document.createTextNode("Añadir"));
-			var tdNombre = document.createElement("td");
-			tdNombre.appendChild(document.createTextNode(director.value.name+" "+director.value.lastName1+" "+director.value.lastName2));
-			tdNombre.setAttribute("class","col-8");
-			tdAdd.appendChild(add);
-			trDir.appendChild(tdAdd);
-			trDir.appendChild(tdNombre);
-			tbody.appendChild(trDir);
-			//Añade una funcion a cada boton de añadir
-			add.addEventListener("click", function(){
-				var input = document.forms["addProduction"]["director"];
-				//Añade al array el nomnbre de boton
-				arrayDir.push(this.value);
-				input.value = arrayDir.toString();
-				//oculta la tabla
-				document.getElementById("divTabla").style.display = "none";
-			});
-			director = directores.next();
-		}//Fin del while
+		thVacioD.appendChild(ocultarD);
+		var thNombreD = document.createElement("th");
+		thNombreD.appendChild(document.createTextNode("Nombre completo"));
+		var tbodyD = document.createElement("tbody");
+		tbodyD.setAttribute("id","tablaDirectores");
+		//Abre la conexion con la base de datos
+		var request2 = indexedDB.open(nombreDB);
+		//Si ha salido bien
+		request2.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db2 = event.target.result;         
+			var objectStore2 = db2.transaction(["directores"],"readonly").objectStore("directores");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore2.openCursor().onsuccess = function(event) {
+				var director = event.target.result;
+				if (director) {
+					var trDirD = document.createElement("tr");
+					var tdAddD = document.createElement("td");
+					var addD = document.createElement("button");
+					addD.setAttribute("type","button");
+					addD.setAttribute("class","btn btn-danger");
+					if (director.value.lastName2 == null) {
+						director.value.lastName2 = " ";
+					}
+					addD.setAttribute("value",director.value.name+" "+director.value.lastName1+" "+director.value.lastName2);
+					addD.appendChild(document.createTextNode("Añadir"));
+					var tdNombreD = document.createElement("td");
+					tdNombreD.appendChild(document.createTextNode(director.value.name+" "+director.value.lastName1+" "+director.value.lastName2));
+					tdNombreD.setAttribute("class","col-8");
+					tdAddD.appendChild(addD);
+					trDirD.appendChild(tdAddD);
+					trDirD.appendChild(tdNombreD);
+					tbodyD.appendChild(trDirD);
+					//Añade una funcion a cada boton de añadir
+					addD.addEventListener("click", function(){
+						var input = document.forms["addProduction"]["director"];
+						//Añade al array el nomnbre de boton
+						arrayDir.push(this.value);
+						input.value = arrayDir.toString();
+						//oculta la tabla
+						document.getElementById("divTabla").style.display = "none";
+					});
+					//Pasa al siguiente director
+					director.continue();
+				}
+			};
+		};
 		//Añade los eventos de la tabla
 		$(document).ready(function(){
 			$("#buscador").on("keyup", function() {
@@ -1891,18 +1916,18 @@ function formProducciones(tipo){
 		});
 		grupo6.appendChild(label6);
 		divInputBtn.appendChild(divBtn);
-		divBtn.appendChild(botonRemover);
+		divBtn.appendChild(botonRemoverD);
 		divInputBtn.appendChild(inputDirector);
 		divInputBtn.appendChild(malDirector);
 		grupo6.appendChild(divInputBtn);
-		divTabla.appendChild(buscador);
-		divTabla.appendChild(tabla);
-		grupo6.appendChild(divTabla);
-		tabla.appendChild(thead);
-		tabla.appendChild(tbody);
-		thead.appendChild(tr);
-		tr.appendChild(thVacio);
-		tr.appendChild(thNombre);
+		divTablaD.appendChild(buscadorD);
+		divTablaD.appendChild(tablaD);
+		grupo6.appendChild(divTablaD);
+		tablaD.appendChild(theadD);
+		tablaD.appendChild(tbodyD);
+		theadD.appendChild(trD);
+		trD.appendChild(thVacioD);
+		trD.appendChild(thNombreD);
 		divMovie.appendChild(grupo6);
 		formulario.appendChild(divMovie);
 		//DIV QUE APARECE SI EN EL SELECT SE PONE SERIE
@@ -1947,18 +1972,18 @@ function formProducciones(tipo){
 		buscadorReparto.setAttribute("id","buscadorReparto");
 		buscadorReparto.setAttribute("placeholder","Buscar...");
 		//SE CREA LA TABLA DE LOS ACTORES
-		var tabla = document.createElement("table");
-		tabla.setAttribute("class","table table-bordered");
-		tabla.setAttribute("name","reparto");
-		tabla.setAttribute("id","reparto");
-		var thead = document.createElement("thead");
-		var tr = document.createElement("tr");
-		var thVacio = document.createElement("th");
-		var ocultar = document.createElement("button");
-		ocultar.setAttribute("type","button");
-		ocultar.setAttribute("class","btn btn-secondary");
-		ocultar.appendChild(document.createTextNode("Mostrar/Ocultar"));
-		ocultar.addEventListener("click", function(){
+		var tablaR = document.createElement("table");
+		tablaR.setAttribute("class","table table-bordered");
+		tablaR.setAttribute("name","reparto");
+		tablaR.setAttribute("id","reparto");
+		var theadR = document.createElement("thead");
+		var trR = document.createElement("tr");
+		var thVacioR = document.createElement("th");
+		var ocultarR = document.createElement("button");
+		ocultarR.setAttribute("type","button");
+		ocultarR.setAttribute("class","btn btn-secondary");
+		ocultarR.appendChild(document.createTextNode("Mostrar/Ocultar"));
+		ocultarR.addEventListener("click", function(){
 			var cont = document.getElementById("tablaReparto");
 			if(cont.style.display=="table-row-group"){
 				cont.style.display = "none";
@@ -1966,43 +1991,55 @@ function formProducciones(tipo){
 				cont.style.display = "table-row-group";
 			}
 		});
-		thVacio.appendChild(ocultar);
-		var thNombre = document.createElement("th");
-		thNombre.appendChild(document.createTextNode("Nombre"));
-		var tbody = document.createElement("tbody");
-		tbody.setAttribute("id","tablaReparto");
+		thVacioR.appendChild(ocultarR);
+		var thNombreR = document.createElement("th");
+		thNombreR.appendChild(document.createTextNode("Nombre"));
+		var tbodyR = document.createElement("tbody");
+		tbodyR.setAttribute("id","tablaReparto");
 		//Contador para llevar la cuenta de los divs creados
 		var contador = 0;
-		var actores = video.actors;
-		var actor = actores.next();
-		while (actor.done !== true){
-			var trCat = document.createElement("tr");
-			var tdAdd = document.createElement("td");
-			var add = document.createElement("button");
-			add.setAttribute("type","button");
-			add.setAttribute("class","btn btn-danger");
-			if (actor.value.lastName2 == null) {
-				actor.value.lastName2 = " ";
-			}
-			add.setAttribute("value",actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2);
-			add.appendChild(document.createTextNode("Añadir"));
-			var tdActor = document.createElement("td");
-			tdActor.appendChild(document.createTextNode(actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2));
-			tdActor.setAttribute("class","col-8");
-			tdAdd.appendChild(add);
-			trCat.appendChild(tdAdd);
-			trCat.appendChild(tdActor);
-			tbody.appendChild(trCat);
-			//Añade una funcion a cada boton de añadir
-			add.addEventListener("click", function(){
-				//Añade al array el nombre de boton
-				arrayReparto.push(this.value);
-				//llama a la funcion de añadir divActor
-				addReparto(this.value,contador);
-				contador++;
-			});
-			actor = actores.next();
-		}//Fin del while		
+		//Abre la conexion con la base de datos
+		var request3 = indexedDB.open(nombreDB);
+		//Si ha salido bien
+		request3.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db3 = event.target.result;         
+			var objectStore3 = db3.transaction(["actores"],"readonly").objectStore("actores");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore3.openCursor().onsuccess = function(event) {
+				var actor = event.target.result;
+				if (actor) {
+					var trCatR = document.createElement("tr");
+					var tdAddR = document.createElement("td");
+					var addR = document.createElement("button");
+					addR.setAttribute("type","button");
+					addR.setAttribute("class","btn btn-danger");
+					if (actor.value.lastName2 == null) {
+						actor.value.lastName2 = " ";
+					}
+					addR.setAttribute("value",actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2);
+					addR.appendChild(document.createTextNode("Añadir"));
+					var tdActorR = document.createElement("td");
+					tdActorR.appendChild(document.createTextNode(actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2));
+					tdActorR.setAttribute("class","col-8");
+					tdAddR.appendChild(addR);
+					trCatR.appendChild(tdAddR);
+					trCatR.appendChild(tdActorR);
+					tbodyR.appendChild(trCatR);
+					//Añade una funcion a cada boton de añadir
+					addR.addEventListener("click", function(){
+						//Añade al array el nombre de boton
+						arrayReparto.push(this.value);
+						//llama a la funcion de añadir divActor
+						addReparto(this.value,contador);
+						contador++;
+					});
+
+					//Pasa al siguiente actor
+					actor.continue();
+				}
+			};
+		};
 		//Añade eventos al hacer click sobre los botones del formulario creado
 		$(document).ready(function(){
 			$("#buscadorReparto").on("keyup", function() {
@@ -2015,12 +2052,12 @@ function formProducciones(tipo){
 		grupo7.appendChild(label7);
 		grupo7.appendChild(divReparto);
 		grupo7.appendChild(buscadorReparto);
-		grupo7.appendChild(tabla);
-		tabla.appendChild(thead);
-		tabla.appendChild(tbody);
-		thead.appendChild(tr);
-		tr.appendChild(thVacio);
-		tr.appendChild(thNombre);
+		grupo7.appendChild(tablaR);
+		tablaR.appendChild(theadR);
+		tablaR.appendChild(tbodyR);
+		theadR.appendChild(trR);
+		trR.appendChild(thVacioR);
+		trR.appendChild(thNombreR);
 		formulario.appendChild(grupo7);
 		//CATEGORIAS DE LA PRODUCCION
 		//SE CREA EL BUSCADOR 
@@ -2033,12 +2070,12 @@ function formProducciones(tipo){
 		divInputBtn.setAttribute("class","input-group");
 		var divBtn = document.createElement("div");
 		divBtn.setAttribute("class","input-group-prepend");
-		var botonRemover = document.createElement("button");
-		botonRemover.setAttribute("type","button");
-		botonRemover.setAttribute("class","btn btn-sm btn-outline-secondary");
-		botonRemover.appendChild(document.createTextNode("Remover"));
+		var botonRemoverC = document.createElement("button");
+		botonRemoverC.setAttribute("type","button");
+		botonRemoverC.setAttribute("class","btn btn-sm btn-outline-secondary");
+		botonRemoverC.appendChild(document.createTextNode("Remover"));
 		//añade el evento al hacer click al boton de remover
-		botonRemover.addEventListener("click",function(){
+		botonRemoverC.addEventListener("click",function(){
 			var input = document.forms["addProduction"]["categorias"];
 				//Quita el ultimo elemento del array
 				arrayCategorias.pop();
@@ -2053,24 +2090,24 @@ function formProducciones(tipo){
 		var malCat = document.createElement("small");
 		malCat.setAttribute("class","form-text text-muted");
 		malCat.setAttribute("id","catMal");
-		var buscador = document.createElement("input");
-		buscador.setAttribute("class","form-control my-3");
-		buscador.setAttribute("type","text");
-		buscador.setAttribute("id","buscadorCategorias");
-		buscador.setAttribute("placeholder","Buscar...");
+		var buscadorC = document.createElement("input");
+		buscadorC.setAttribute("class","form-control my-3");
+		buscadorC.setAttribute("type","text");
+		buscadorC.setAttribute("id","buscadorCategorias");
+		buscadorC.setAttribute("placeholder","Buscar...");
 		//SE CREA LA TABLA DE LAS CATEGORIAS
-		var tabla = document.createElement("table");
-		tabla.setAttribute("class","table table-bordered");
-		tabla.setAttribute("name","categoria");
-		tabla.setAttribute("id","categoria");
-		var thead = document.createElement("thead");
-		var tr = document.createElement("tr");
-		var thVacio = document.createElement("th");
-		var ocultar = document.createElement("button");
-		ocultar.setAttribute("type","button");
-		ocultar.setAttribute("class","btn btn-secondary");
-		ocultar.appendChild(document.createTextNode("Mostrar/Ocultar"));
-		ocultar.addEventListener("click", function(){
+		var tablaC = document.createElement("table");
+		tablaC.setAttribute("class","table table-bordered");
+		tablaC.setAttribute("name","categoria");
+		tablaC.setAttribute("id","categoria");
+		var theadC = document.createElement("thead");
+		var trC = document.createElement("tr");
+		var thVacioC = document.createElement("th");
+		var ocultarC = document.createElement("button");
+		ocultarC.setAttribute("type","button");
+		ocultarC.setAttribute("class","btn btn-secondary");
+		ocultarC.appendChild(document.createTextNode("Mostrar/Ocultar"));
+		ocultarC.addEventListener("click", function(){
 			var cont = document.getElementById("tablaCategorias");
 			if(cont.style.display=="table-row-group"){
 				cont.style.display = "none";
@@ -2078,37 +2115,49 @@ function formProducciones(tipo){
 				cont.style.display = "table-row-group";
 			}
 		});
-		thVacio.appendChild(ocultar);
-		var thNombre = document.createElement("th");
-		thNombre.appendChild(document.createTextNode("Nombre"));
-		var tbody = document.createElement("tbody");
-		tbody.setAttribute("id","tablaCategorias");
-		var categorias = video.categories;
-		var categoria = categorias.next();
-		while (categoria.done !== true){
-			var trCat = document.createElement("tr");
-			var tdAdd = document.createElement("td");
-			var add = document.createElement("button");
-			add.setAttribute("type","button");
-			add.setAttribute("class","btn btn-danger");
-			add.setAttribute("value",categoria.value.name);
-			add.appendChild(document.createTextNode("Añadir"));
-			var tdTitulo = document.createElement("td");
-			tdTitulo.appendChild(document.createTextNode(categoria.value.name));
-			tdTitulo.setAttribute("class","col-8");
-			tdAdd.appendChild(add);
-			trCat.appendChild(tdAdd);
-			trCat.appendChild(tdTitulo);
-			tbody.appendChild(trCat);
-			//Añade una funcion a cada boton de añadir
-			add.addEventListener("click", function(){
-				var input = document.forms["addProduction"]["categorias"];
-				//Añade al array el nomnbre de boton
-				arrayCategorias.push(this.value);
-				input.value = arrayCategorias.toString();
-			});
-			categoria = categorias.next();
-		}//Fin del while		
+		thVacioC.appendChild(ocultarC);
+		var thNombreC = document.createElement("th");
+		thNombreC.appendChild(document.createTextNode("Nombre"));
+		var tbodyC = document.createElement("tbody");
+		tbodyC.setAttribute("id","tablaCategorias");
+		//Abre la conexion con la base de datos
+		var request4 = indexedDB.open(nombreDB);
+		//Si ha salido bien
+		request4.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db4 = event.target.result;         
+			var objectStore4 = db4.transaction(["categorias"],"readonly").objectStore("categorias");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore4.openCursor().onsuccess = function(event) {
+				var categoria = event.target.result;
+				if (categoria) {
+					var trCatC = document.createElement("tr");
+					var tdAddC = document.createElement("td");
+					var addC = document.createElement("button");
+					addC.setAttribute("type","button");
+					addC.setAttribute("class","btn btn-danger");
+					addC.setAttribute("value",categoria.value.name);
+					addC.appendChild(document.createTextNode("Añadir"));
+					var tdTituloC = document.createElement("td");
+					tdTituloC.appendChild(document.createTextNode(categoria.value.name));
+					tdTituloC.setAttribute("class","col-8");
+					tdAddC.appendChild(addC);
+					trCatC.appendChild(tdAddC);
+					trCatC.appendChild(tdTituloC);
+					tbodyC.appendChild(trCatC);
+					//Añade una funcion a cada boton de añadir
+					addC.addEventListener("click", function(){
+						var input = document.forms["addProduction"]["categorias"];
+						//Añade al array el nomnbre de boton
+						arrayCategorias.push(this.value);
+						input.value = arrayCategorias.toString();
+					});
+
+					//Pasa al siguiente categoria
+					categoria.continue();
+				}
+			};
+		};
 		//Añade eventos al hacer click sobre los botones del formulario creado
 		$(document).ready(function(){
 			$("#buscadorCategorias").on("keyup", function() {
@@ -2120,17 +2169,17 @@ function formProducciones(tipo){
 		});
 		grupo8.appendChild(label8);
 		divInputBtn.appendChild(divBtn);
-		divBtn.appendChild(botonRemover);
+		divBtn.appendChild(botonRemoverC);
 		divInputBtn.appendChild(cat);
 		divInputBtn.appendChild(malCat);
 		grupo8.appendChild(divInputBtn);
-		grupo8.appendChild(buscador);
-		grupo8.appendChild(tabla);
-		tabla.appendChild(thead);
-		tabla.appendChild(tbody);
-		thead.appendChild(tr);
-		tr.appendChild(thVacio);
-		tr.appendChild(thNombre);
+		grupo8.appendChild(buscadorC);
+		grupo8.appendChild(tablaC);
+		tablaC.appendChild(theadC);
+		tablaC.appendChild(tbodyC);
+		theadC.appendChild(trC);
+		trC.appendChild(thVacioC);
+		trC.appendChild(thNombreC);
 		formulario.appendChild(grupo8);
 		//BOTONES DEL FORMULARIO
 		var grupoBtn = document.createElement("div");
