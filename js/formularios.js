@@ -15,6 +15,10 @@ function formCategorias(tipo){
 	}
 
 	if (tipo == "add") {
+		//Se limpia el array
+		while(arrayProducciones.length != 0){
+			arrayProducciones.shift();
+		}
 		var formulario = document.createElement("form");
 		formulario.setAttribute("name","addCategory");
 		formulario.setAttribute("action","");
@@ -508,40 +512,37 @@ function addNewCategory(name,description){
 			//Si el añadido ha sido bueno
 			add.onsuccess = function (event) {
 				//Si hay producciones en el array de producciones las asigna a esa categoria
-				if (arrayProducciones.length != 0) {
-					for (let index = 0; index < arrayProducciones.length; index++) {
-						//recorrremos las producciones
-						var encontrado = false;
-						var producciones = video.productions;
-						var produccion = producciones.next();
-						while ((produccion.done !== true) && (!encontrado)){
-							if (arrayProducciones[index] == produccion.value.title) {
-								try {
-									video.assignCategory(newCategory,produccion.value);
-									encontrado = true;
-								} catch (error) {
-									document.getElementById("producMal").style.display = "block";
-									document.getElementById("producMal").innerHTML = "No puedes añadir dos veces la produccion "+produccion.value.title+"";
-								}//Fin del try
+				if (arrayProducciones.length > 0) {
+					var array =  new Array();
+					//Abre la conexion con la base de datos categorias
+					var request = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db = event.target.result;         
+						var objectStore = db.transaction(["producciones"],"readonly").objectStore("producciones");
+						//Abre un cursor para recorrer todos los objetos de la base de datos 
+						objectStore.openCursor().onsuccess = function(event) {
+							var cursor = event.target.result;
+							//Si el cursor devuelve un valor pinta las tarjetas
+							if(cursor){
+								for (let index = 0; index < arrayProducciones.length; index++) {
+									if(cursor.value.title == arrayProducciones[index]){
+										array.push(cursor.value);
+										//Se añade a la base de datos de las relaciones
+										var objetoCategory = {category: newCategory.name, productions: array };
+										addRelaciones("categoryPro",objetoCategory);
+									}
+								}
+								//Pasa a la siguiente categoria
+								cursor.continue();
 							}//Fin del if
-							produccion = producciones.next();
-						}//Fin del while
-					}//Fin del for
+						};
+						setTimeout(exito,1000);			
+					};
+				}else{
+					exito();
 				}//Fin del if
-				//Se limpia el array
-				while(arrayProducciones.length != 0){
-					arrayProducciones.shift();
-				}
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				categoriesMenuPopulate();
-				showHomePage();
 			};//Fin de add.onsuccess
 		};//Fin de categoriasDB.onsuccess
 	} catch (error) {
@@ -567,22 +568,21 @@ function deleteCategory(){
 				var objetoCategoria = new Category (objeto.result.name, objeto.result.description);
 				//Se elimina por el key path
 				deleteObjectStore.delete(objetoCategoria.name);
+				//Se conecta a la base de datos de las relacion para eliminar el objeto de alli
+				var deleteObjectRelation = db.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+				var objeto2 = deleteObjectRelation.get(btnValor);
+				objeto2.onsuccess = function(event) {
+					//Se elimina por el key path
+					deleteObjectRelation.delete(objetoCategoria.name);
+				};
 				try {
 					//Elimina el objeto que se ha encontrado del sistema
 					video.removeCategory(objetoCategoria);
 				} catch (error) {
 					//NO HACE NADA
 				}
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				categoriesMenuPopulate();
-				showHomePage();
+				//Muestra el modal y la pagina de inicio
+				exito();
 			};//FIn de objeto.onsuccess
 	};//Fin de categoriasDB.onsuccess
 }//Fin de deleteCategory
@@ -705,26 +705,28 @@ function validarModificacionCategoria(objetoCategoria){
 					if (nuevo.name != objetoCategoria.name) {
 						objectStore.delete(objetoCategoria.name);
 					}
-					var encontrado = false;
-					var categorias = video.categories;
-					var categoria = categorias.next();
-					while ((categoria.done !== true) && (!encontrado)){
-						if (categoria.value.name == objetoCategoria.name) {
-							//Se cambian los parametros del objeto que hay en el array del videosystem
-							//para que mientras que no se recargue la pagina las producciones sigan apareciendo en la nueva
-							categoria.value.name = nombre.value;
-							categoria.value.description = descript.value;
-							encontrado = true;
-						}
-						categoria = categorias.next();
-					}//Fin del while
-					//Se abre el modal que avisa al usuario
-					$('#exitoModal').modal('show');
-					//Si todo ha salido bien vuelve al menu principal
-					showHomePage();
-					categoriesMenuPopulate();
-					contenidoCentral.setAttribute("class","d-block");
-					contenidoFormularios.setAttribute("class","d-none");
+					//Abre la conexion con la base de datos
+					var request2 = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request2.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db2 = event.target.result;         
+						var objectStore2 = db2.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+						//Obtiene el objeto de la base de datos
+						var objeto2 = objectStore2.get(objetoCategoria.name);
+						objeto2.onsuccess = function(event) {
+							var nuevo2 = objeto2.result;	
+							nuevo2.category = nombre.value;					
+							//Se manda la actualizacion a la base de datos
+							var update2 = objectStore2.put(nuevo2);
+							update2.onsuccess = function(){
+								//Borra el antiguo para que no haya duplicados
+								objectStore2.delete(objetoCategoria.name);
+								//Muestra el modal y la pagina de inicio
+								exito();
+							};
+						};
+					};
 				};//Fin del evento update.onsuccess
 			};//Fin de objeto.onsuccess
 		};//FIn de request.onsuccess
@@ -1227,16 +1229,24 @@ function addNewPerson(rol,name, lastName1, born, lastName2, picture){
 			};//FIn de add.onerror
 			//Si el añadido ha sido bueno
 			add.onsuccess = function (event) {
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				showHomePage();
-				categoriesMenuPopulate();
+				if (rol == "Actor") {
+					base = "repartoPro";
+				}else{
+					base = "directorPro";
+				}
+				//Abre la conexion con la base de datos
+				var personDB = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				personDB.onsuccess = function(event) { 
+					var db = event.target.result;        
+					var addObjectStore = db.transaction([base],"readwrite").objectStore(base);
+					//Añade esa person a la base de datos
+					var add = addObjectStore.add({completo: newPerson.completo, productions: []});
+					add.onsuccess = function (event) {
+						//Muestra el modal y la pagina de inicio
+						exito();
+					};
+				};
 			};//FIn de add.onsuccess
 		};//Fin de personDB.onsuccess
 	} catch (error) {
@@ -1254,7 +1264,7 @@ function deleteActor(){
 	//Recoge el valor del boton pulsado
 	var act = this.value;
 	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
-	//Abre la conexion con la base de datos categorias
+	//Abre la conexion con la base de datos
 	var actoresDB = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	actoresDB.onsuccess = function(event) { 
@@ -1265,23 +1275,20 @@ function deleteActor(){
 				var objetoActor = new Person (objeto.result.name, objeto.result.lastName1, objeto.result.born, objeto.result.lastName2, objeto.result.picture);
 				//Se elimina por el key path
 				deleteObjectStore.delete(objetoActor.completo);
-				try {
-					//Elimina el objeto que se ha encontrado del sistema
-					video.removeActor(objetoActor);
-				} catch (error) {
-					//NO HACE NADA
-				}
+				//Abre la conexion con la base de datos
+				var actoresDB = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				actoresDB.onsuccess = function(event) { 
+						var db = event.target.result;        
+						var deleteObjectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+						var borrar = deleteObjectStore.delete(objetoActor.completo);
+						borrar.onsuccess = function(event) {
+							//Muestra el modal y la pagina de inicio
+							exito();
+						};
+				};
 			};//FIn de objeto.onsuccess
-			//Se abre el modal que avisa al usuario
-			$('#exitoModal').modal('show');
-			//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-			var contenidoCentral = document.getElementById("contenidoCentral");
-			contenidoCentral.setAttribute("class","d-block");
-			//Selecciona la zona para poner los formularios
-			var contenidoFormularios = document.getElementById("contenidoFormularios");
-			contenidoFormularios.setAttribute("class","d-none");
-			categoriesMenuPopulate();
-			showHomePage();
+			
 	};//Fin de actoresDB.onsuccess
 }//Fin de deleteActor
 
@@ -1301,23 +1308,19 @@ function deleteDirector(){
 				var objetoDirector = new Person (objeto.result.name, objeto.result.lastName1, objeto.result.born, objeto.result.lastName2, objeto.result.picture);
 				//Se elimina por el key path
 				deleteObjectStore.delete(objetoDirector.completo);
-				try {
-					//Elimina el objeto que se ha encontrado del sistema
-					video.removeDirector(objetoDirector);
-				} catch (error) {
-					//NO HACE NADA
-				}
+				//Abre la conexion con la base de datos
+				var directoresDB = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				directoresDB.onsuccess = function(event) { 
+						var db = event.target.result;        
+						var deleteObjectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+						var borrar = deleteObjectStore.delete(objetoDirector.completo);
+						borrar.onsuccess = function(event) {
+							//Muestra el modal y la pagina de inicio
+							exito();
+						};
+				};
 			};//FIn de objeto.onsuccess
-			//Se abre el modal que avisa al usuario
-			$('#exitoModal').modal('show');
-			//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-			var contenidoCentral = document.getElementById("contenidoCentral");
-			contenidoCentral.setAttribute("class","d-block");
-			//Selecciona la zona para poner los formularios
-			var contenidoFormularios = document.getElementById("contenidoFormularios");
-			contenidoFormularios.setAttribute("class","d-none");
-			categoriesMenuPopulate();
-			showHomePage();
 	};//Fin de directoresDB.onsuccess
 }//Fin de deleteDirector
 
@@ -1539,48 +1542,34 @@ function validarModificacionPerson(rol,objetoPerson){
 					if (nuevo.completo != objetoPerson.completo) {
 						objectStore.delete(objetoPerson.completo);
 					}
+					var tabla = "";
 					if (rol == "Actor") {
-						var encontrado = false;
-						var actores = video.actors;
-						var actor = actores.next();
-						while ((actor.done !== true) && (!encontrado)){
-							if (actor.value.completo == objetoPerson.completo) {
-								//Se cambian los parametros del objeto que hay en el array del videosystem
-								//para que mientras que no se recargue la pagina las producciones sigan apareciendo en la nueva
-								actor.value.lastName1 = lastName1.value;
-								actor.value.lastName2 = lastName2.value;
-								actor.value.born = fecha;
-								actor.value.picture = picture.value;
-								actor.value.completo = nombre.value+" "+lastName1.value+" "+lastName2.value;
-								encontrado = true;
-							}
-							actor = actores.next();
-						}//Fin del while
+						tabla = "repartoPro";
 					}else{
-						var encontrado = false;
-						var directores = video.directors;
-						var director = directores.next();
-						while ((director.done !== true) && (!encontrado)){
-							if (director.value.completo == objetoPerson.completo) {
-								//Se cambian los parametros del objeto que hay en el array del videosystem
-								//para que mientras que no se recargue la pagina las producciones sigan apareciendo en la nueva
-								director.value.lastName1 = lastName1.value;
-								director.value.lastName2 = lastName2.value;
-								director.value.born = fecha;
-								director.value.picture = picture.value;
-								director.value.completo = nombre.value+" "+lastName1.value+" "+lastName2.value;
-								encontrado = true;
-							}
-							director = directores.next();
-						}//Fin del while
+						tabla = "directorPro";
 					}//Fin del if
-					//Se abre el modal que avisa al usuario
-					$('#exitoModal').modal('show');
-					//Si todo ha salido bien vuelve al menu principal
-					showHomePage();
-					contenidoCentral.setAttribute("class","d-block");
-					contenidoFormularios.setAttribute("class","d-none");
-					return true;
+					//Abre la conexion con la base de datos
+					var request2 = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request2.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db2 = event.target.result;         
+						var objectStore2 = db2.transaction([tabla],"readwrite").objectStore(tabla);
+						//Obtiene el objeto de la base de datos
+						var objeto2 = objectStore2.get(objetoPerson.completo);
+						objeto2.onsuccess = function(event) {
+							var nuevo2 = objeto2.result;
+							nuevo2.completo = nombre.value+" "+lastName1.value+" "+lastName2.value;					
+							//Se manda la actualizacion a la base de datos
+							var update2 = objectStore2.put(nuevo2);
+							update2.onsuccess = function(){
+								//Borra el antiguo para que no haya duplicados
+								objectStore2.delete(objetoPerson.completo);
+								//Muestra el modal y la pagina de inicio
+								exito();
+							};
+						};
+					};
 				};//Fin del evento update.onsuccess
 			};//Fin de objeto.onsuccess
 		};//FIn de request.onsuccess	
@@ -2525,80 +2514,99 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 			};//FIn de add.onerror
 			//Si ha ido bien
 			add.onsuccess = function (event) {
-				//Si se añadido bien comienza a asignar las categorias, director y reparto
-				var categoriasDB = indexedDB.open(nombreDB);
-				categoriasDB.onsuccess = function(event) {
-					var db = event.target.result;
-					var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
-					for (var i in arrayCategorias) {
-						try {
-							video.assignCategory(objectStore.get(arrayCategorias[i].result,objetoProduction));
-						} catch (error) {
-							document.getElementById("catMal").innerHTML = "Ha ocurrido un problema al añadir categorias a la producción";
-							document.getElementById("catMal").style.display = "block";
-						}
-					}
-				};//Fin de categoriasDB.onsuccess
 
-				//Abre la conexion con la base de datos directores
-				var directoresDB = indexedDB.open(nombreDB);
-				directoresDB.onsuccess = function(event) {
-					var db = event.target.result;
-					var objectStore = db.transaction(["directores"],"readwrite").objectStore("directores");
-					objectStore.onsuccess = function(event) {
-						for (var i in arrayDir) {
-							var objeto = objectStore.get(arrayDir[i]);
-							try {
-								video.assignDirector(objeto.result,objetoProduction);
-							} catch (error) {
-								document.getElementById("directorMal").innerHTML = "El director ya tiene asignada esa producción";
-								document.getElementById("directorMal").style.display = "block";
+				//AÑADE LA PRODUCCION A LAS CATEGORIAS 
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < arrayProducciones.length; i++) {
+								if(cursor.value.category == arrayProducciones[i]){
+									//añade la produccion del array
+									cursor.value.productions.push(objetoProduction.getObject());
+								}
 							}
-						}
-					};//Fin de objectStore.onsuccess
-				};//Fin de directoresDB.onsuccess
+							var nuevo = { category: cursor.value.category , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa a la siguiente categoria
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
+				//AÑADE EL DIRECTOR A LA PRODUCCION
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							//for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.completo == arrayDir[0]){
+									//añade la produccion del array
+									cursor.value.productions.push(objetoProduction.getObject());
+								}
+							//}
+							var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa al siguiente director
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
 				//Se asignan el reparto a la produccion si hay
 				if (arrayReparto.length > 0) {
-					//Abre la conexion con la base de datos actores
-					var actoresDB = indexedDB.open(nombreDB);
-					actoresDB.onsuccess = function(event) {
-						var db = event.target.result;
-						var objectStore = db.transaction(["actores"],"readonly").objectStore("actores");
-						objectStore.onsuccess = function(event) {
-							for (var i in arrayReparto) {
-								var objeto = objectStore.get(arrayReparto[i]);
-								//Recoge el papel del actor, y si es principal o no
-								var papel = document.forms["addProduction"]["papel"+index+""].value;
-								var principal = document.forms["addProduction"]["principal"+index+""].checked;
-								try {
-									//Si coincide lo añade a la produccion
-									video.assignActor(objeto.result,objetoProduction,papel,principal);
-								} catch (error) {
-									//NO HACE NADA
+					//AÑADE EL REPARTO DE LA PRODUCCION
+					var request = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db = event.target.result;         
+						var objectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+						//Abre un cursor para recorrer todos los objetos de la base de datos 
+						objectStore.openCursor().onsuccess = function(event) {
+							var cursor = event.target.result;
+							if(cursor){
+								for (let i = 0; i < arrayReparto.length; i++) {
+									if(cursor.value.completo == arrayReparto[i]){
+										//Recoge el papel del actor, y si es principal o no
+										var papel = document.forms["addProduction"]["papel"+index+""].value;
+										var principal = document.forms["addProduction"]["principal"+index+""].checked;
+										//añade la produccion del array
+										cursor.value.productions.push({produccion: objetoProduction.getObject(), papel: papel, principal: principal});
+									}
 								}
-							}//Fin del for
-						};//Fin de objectStore.onsuccess
-					};//Fin de actoresDB.onsuccess
+								var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+								cursor.update(nuevo);
+								//Pasa al siguiente director
+								cursor.continue();
+							}//Fin del if
+						};		
+					};
+					while(arrayReparto.length != 0){
+						arrayReparto.shift();
+					}
 				}//FIn de if que comprueba el array de reparto
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				categoriesMenuPopulate();
-				showHomePage();
+			
+				//Muestra el modal y la pagina de inicio
+				setTimeout(exito,1000);
 				//Se limpia los arrays array
 				while(arrayDir.length != 0){
 					arrayDir.shift();
 				}
 				while(arrayCategorias.length != 0){
 					arrayCategorias.shift();
-				}
-				while(arrayReparto.length != 0){
-					arrayReparto.shift();
 				}
 			};//FIn de add.onsuccess
 		};//Fin de produccionesDB.onsuccess
@@ -2624,83 +2632,83 @@ function deleteProduction(){
 				}else{
 					objetoProduccion = new Serie (objeto.result.title, objeto.result.publication, objeto.result.nationality, objeto.result.synopsis, objeto.result.image, objeto.result.season);
 				}
-				//Se recorre todas las categorias para quitar la produccion 
-				var categorias = video.categories;
-				var categoria = categorias.next();
-				while (categoria.done !== true){
-					try {
-						//Intenta coger del iterador las categorias, si se ha recargado se pierde
-						//Por lo tanto da error y no elimina la produccion
-						//Se recorren las producciones de esa categoria
-						var productions = video.getProductionsCategory(categoria.value);
-						var production = productions.next();
-						while (production.done !== true){
-							//Si la produccion de esa categoria coincide con el titulo de la producion que vamos a eliminar
-							//las desasigna de todas las categorias en las que este
-							if(production.value.title == objetoProduccion.title){
-								try {
-									video.deassignCategory(categoria.value,production.value);
-								} catch (error) {
-									//NO HACE NADA
-								}	
-							}
-							production = productions.next();
-						}//Fin del while de las producciones
-						categoria = categorias.next();
-					} catch (error) {
-						//NO HACE NADA 
-					}
-				}//FIn del while de las categorias
-				//Se recorren los directores para quitar la produccion que vamos a eliminar
-				//Muestra las producciones en las que esta asignado el actor
-				var directores = video.directors;
-				var director = directores.next();
-				//Recorre todos los directores del sistema
-				while (director.done !== true){
-					try {
-						//Intenta coger del iterador las producciones del director, si se ha recargado se pierde
-						//Por lo tanto da error y no elimina la produccion
-						//Para cada director hace un iterador con sus producciones
-						var productions = video.getProductionsDirector(director.value);
-						var production = productions.next();
-						while (production.done !== true){
-							//Si la produccion de ese director coincide con el titulo de la producion que vamos a eliminar
-							if(production.value.title == objetoProduccion.title){
-								try {
-									video.deassignDirector(director.value,production.value);
-								} catch (error) {
-									//NO HACE NADA
+				
+				//ELIMINA LA PRODUCCION DE LAS CATEGORIAS EN LAS QUE ESTE
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.productions[i].title == objetoProduccion.title){
+									//Borra la produccion del array
+									cursor.value.productions.splice(i,1);
 								}
 							}
-							//Pasa a la siguiente produccion del director
-							production = productions.next();
-						}//Fin del while de las producciones del director
-						//Pasa al siguiente director
-						director = directores.next();
-					} catch (error) {
-						//NO HACE NADA
-					}
-				}//Fin del while de los directores
+							var nuevo = { category: cursor.value.category , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa a la siguiente categoria
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
 
-				//Si se ha recargado la pagina, el sistema no encontrara la produccion aunque este en la base de datos
-				try {
-					//Obtiene todo el reparto de la produccion
-					var elenco = video.getCast(objetoProduccion);
-					var actor = elenco.next();
-					while (actor.done !== true){
-						try {
-							//Quitamos al actor de la produccion
-							video.deassignActor(actor.value,objetoProduccion);
-						} catch (error) {
-							//NO HACE NADA	
-						}		
-						actor = elenco.next();
-					}//Fin del while
-				} catch (error) {
-					//NO HACE NADA
-				}
-				
-				//Se elimina por el key path
+				//ELIMINA LA PRODUCCION DEL DIRECTOR QUE LA TENGA
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.productions[i].title == objetoProduccion.title){
+									//Borra la produccion del array
+									cursor.value.productions.splice(i,1);
+								}
+							}
+							var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa al siguiente director
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
+				//ELIMINA LA PRODUCCION DEL REPARTO QUE TENGA
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.productions[i].produccion.title == objetoProduccion.title){
+									//Borra la produccion del array
+									cursor.value.productions.splice(i,1);
+								}
+							}
+							var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa al siguiente director
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
+				//SE ELIMINA DE LA TABLA DE PRODUCCIONES
 				var operacion = deleteObjectStore.delete(objetoProduccion.title);
 				operacion.onsuccess = function (event) {
 					try {
@@ -2709,16 +2717,8 @@ function deleteProduction(){
 					} catch (error) {
 						//NO HACE NADA
 					}
-					//Se abre el modal que avisa al usuario
-					$('#exitoModal').modal('show');
-					//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-					var contenidoCentral = document.getElementById("contenidoCentral");
-					contenidoCentral.setAttribute("class","d-block");
-					//Selecciona la zona para poner los formularios
-					var contenidoFormularios = document.getElementById("contenidoFormularios");
-					contenidoFormularios.setAttribute("class","d-none");
-					categoriesMenuPopulate();
-					showHomePage();
+					//Muestra el modal y la pagina de inicio
+					setTimeout(exito,1000);
 				};//Fin de operacion.onsuccess
 			};//FIn de objeto.onsuccess
 		};//Fin de produccionesDB.onsuccess
@@ -2898,32 +2898,48 @@ function formRecursos(tipo){
 		thSub.appendChild(document.createTextNode("Subtitulos"));
 		var tbody = document.createElement("tbody");
 		tbody.setAttribute("id","tablaRecursos");
-		for (let index = 0; index < arrayRecursos.length; index++) {
-			var trLink = document.createElement("tr");
-			var tdEliminar = document.createElement("td");
-			tdEliminar.setAttribute("class","text-center");
-			var eliminar = document.createElement("button");
-			eliminar.setAttribute("type","button");
-			eliminar.setAttribute("class","btn btn-danger");
-			eliminar.setAttribute("value",arrayRecursos[index].link);
-			eliminar.appendChild(document.createTextNode("Eliminar"));
-			eliminar.addEventListener("click", deleteResource);
-			var tdLink = document.createElement("td");
-			tdLink.appendChild(document.createTextNode(arrayRecursos[index].link));
-			var tdDuration = document.createElement("td");
-			tdDuration.appendChild(document.createTextNode(arrayRecursos[index].duration));
-			var tdAudio = document.createElement("td");
-			tdAudio.appendChild(document.createTextNode(arrayRecursos[index].audios));
-			var tdSub = document.createElement("td");
-			tdSub.appendChild(document.createTextNode(arrayRecursos[index].subtitles));
-			tdEliminar.appendChild(eliminar);
-			trLink.appendChild(tdEliminar);
-			trLink.appendChild(tdLink);
-			trLink.appendChild(tdDuration);
-			trLink.appendChild(tdAudio);
-			trLink.appendChild(tdSub);
-			tbody.appendChild(trLink);
-		}
+		//Abre la conexion con la base de datos
+		var request = indexedDB.open(nombreDB);
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;         
+			var objectStore = db.transaction(["recursos"],"readonly").objectStore("recursos");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var recurso = event.target.result;
+				//Si el cursor devuelve un valor pinta las tarjetas
+				if (recurso) {
+					var trLink = document.createElement("tr");
+					var tdEliminar = document.createElement("td");
+					tdEliminar.setAttribute("class","text-center");
+					var eliminar = document.createElement("button");
+					eliminar.setAttribute("type","button");
+					eliminar.setAttribute("class","btn btn-danger");
+					eliminar.setAttribute("value",recurso.value.link);
+					eliminar.appendChild(document.createTextNode("Eliminar"));
+					eliminar.addEventListener("click", deleteResource);
+					var tdLink = document.createElement("td");
+					tdLink.appendChild(document.createTextNode(recurso.value.link));
+					var tdDuration = document.createElement("td");
+					tdDuration.appendChild(document.createTextNode(recurso.value.duration));
+					var tdAudio = document.createElement("td");
+					tdAudio.appendChild(document.createTextNode(recurso.value.audios));
+					var tdSub = document.createElement("td");
+					tdSub.appendChild(document.createTextNode(recurso.value.subtitles));
+					tdEliminar.appendChild(eliminar);
+					trLink.appendChild(tdEliminar);
+					trLink.appendChild(tdLink);
+					trLink.appendChild(tdDuration);
+					trLink.appendChild(tdAudio);
+					trLink.appendChild(tdSub);
+					tbody.appendChild(trLink);
+
+					//Pasa al siguiente recurso
+					recurso.continue();
+				}
+			};
+		};
 		var grupoBtn = document.createElement("div");
 		grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
 		var cancelar = document.createElement("button");
@@ -3011,44 +3027,61 @@ function validarRecursos(){
 function addNewResource(duration, link, audios, subtitles){
 	try {
 		var newResource = new Resource(duration, link, audios, subtitles);
-		//EL ARRAY A LA QUE SE AÑADEN LOS RECURSOS ESTA EN js/vs.js AL COMIENZO DEL FICHERO
-		arrayRecursos.push(newResource);
-		//Se abre el modal que avisa al usuario
-		$('#exitoModal').modal('show');
-		//Muestra la pagina principal
-		var contenidoFormularios = document.getElementById("contenidoFormularios");
-		var contenidoCentral = document.getElementById("contenidoCentral");
-		contenidoCentral.setAttribute("class","d-block");
-		contenidoFormularios.setAttribute("class","d-none");
-		showHomePage();
-		categoriesMenuPopulate();
+		//Abre la conexion con la base de datos categorias
+		var resourcesDB = indexedDB.open(nombreDB);
+		//Si ha salido bien
+		resourcesDB.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;         
+			var addObjectStore = db.transaction(["recursos"],"readwrite").objectStore("recursos");
+			var add = addObjectStore.add(newResource.getObject());
+			//Si el añadido ha dado error por duplicado
+			add.onerror = function (event) {
+				document.getElementById("linkMal").style.display = "block";
+				document.getElementById("linkMal").innerHTML = "Un recurso con ese link ya existe";
+				document.getElementById("link").setAttribute("class","form-control border border-danger");
+			};
+			//Si el añadido ha sido bueno
+			add.onsuccess = function (event) {
+				exito();
+			};//Fin de add.onsuccess
+		};//Fin de resourcesDB.onsuccess
 	} catch (error) {
 		//IMPLEMENTAR
 	}
-}//Fin de addNewProduction
+}//Fin de addNewResource
 
 //Elimina una produccion seleccionada
 function deleteResource(){
 	//Recoge el value del boton pulsado
 	var recurso = this.value;
-	let index = 0;
-	var encontrado = false;
+	/* LINEAS AÑADIDAS EN LA PRACTICA 9 */
+	//Abre la conexion con la base de datos 
+	var resourcesDB = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	resourcesDB.onsuccess = function(event) {  
+			var db = event.target.result;       
+			var deleteObjectStore = db.transaction(["recursos"],"readwrite").objectStore("recursos");
+			var objeto = deleteObjectStore.get(recurso);
+			objeto.onsuccess = function(event) {
+				//Se elimina por el key path
+				deleteObjectStore.delete(objeto.result.link);
+				//Muestra el modal y la pagina de inicio
+				exito();
+			};//FIn de objeto.onsuccess
+	};//Fin de resourcesDB.onsuccess
+}//Fin de deleteResource
 
-	while ((index < arrayRecursos.length) && (!encontrado)){
-		if (arrayRecursos[index].link == recurso) {
-			//Si la encuentra asigna el objeto con ese nombre a la variable eliminar
-			arrayRecursos.splice(index,1);
-			encontrado = true;
-			//Se abre el modal que avisa al usuario
-			$('#exitoModal').modal('show');
-			//Muestra la pagina principal
-			var contenidoFormularios = document.getElementById("contenidoFormularios");
-			var contenidoCentral = document.getElementById("contenidoCentral");
-			contenidoCentral.setAttribute("class","d-block");
-			contenidoFormularios.setAttribute("class","d-none");
-			showHomePage();
-			categoriesMenuPopulate();
-		}//Fin del if que compara el nombre de la categoria con el valor del select
-		index++;
-	}//Fin del while
-}//Fin de deleteProduction
+//Muestra un modal, quita los formulario y pone la pagina inicla del sistema
+function exito(){
+	//Se abre el modal que avisa al usuario
+	$('#exitoModal').modal('show');
+	//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+	var contenidoCentral = document.getElementById("contenidoCentral");
+	contenidoCentral.setAttribute("class","d-block");
+	//Selecciona la zona para poner los formularios
+	var contenidoFormularios = document.getElementById("contenidoFormularios");
+	contenidoFormularios.setAttribute("class","d-none");
+	categoriesMenuPopulate();
+	showHomePage();
+}//FIn de exito

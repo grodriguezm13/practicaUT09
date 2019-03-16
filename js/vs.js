@@ -15,20 +15,27 @@ function crearTablas(){
 
 	dataBase.onupgradeneeded = function (e) {  
 		var active = dataBase.result;
+		/* TABLAS DE OBJETOS */
 		//Creacion de la tabla Categorias
-		active.createObjectStore("categorias", { keyPath: 'name' });
-					
+		active.createObjectStore("categorias", { keyPath: 'name' });	
 		//Creacion de la tabla Producciones
 		active.createObjectStore("producciones", { keyPath: 'title'	});
-
 		//Creacion de la tabla actores
 		active.createObjectStore("actores", { keyPath: 'completo' });
-
 		//Creacion de la tabla directores
 		active.createObjectStore("directores", { keyPath: 'completo' });
-
 		//Creacion de la tabla usuarios
 		active.createObjectStore("usuarios", { keyPath: 'email' });
+		//Creacion de la tabla usuarios
+		active.createObjectStore("recursos", { keyPath: 'link' });
+
+		/* TABLAS DE RELACIONES ENTRE OBJETOS */
+		//Creacion de la tabla de producciones de una categoria
+		active.createObjectStore("categoryPro", { keyPath: 'category' });
+		//Creacion de la tabla de producciones de un director
+		active.createObjectStore("directorPro", { keyPath: 'completo' });
+		//Creacion de la tabla de reaprto de una produccion
+		active.createObjectStore("repartoPro", { keyPath: 'completo' });
 	};//FIn del dataBase.onupgradeneeded
 }//FIn de baseIndexed
 
@@ -61,6 +68,10 @@ function initPopulate(){
 	var arrayAct = new Array();
 	var arrayDir = new Array();
 	var arrayUser = new Array();
+	var arrayResources = new Array();
+	var arraycatPro = new Array();
+	var arrayRePro = new Array();
+	var arrayDirPro = new Array();
 	//SE leen los datos iniciales del fichero JSON
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
@@ -70,29 +81,51 @@ function initPopulate(){
 			for(i in myObj.categorias){
 				//Se guardan los valores en el array 
 				arrayCat.push(myObj.categorias[i]);
-			}//Fin del for exterior
+			}//Fin del for 
 			for(i in myObj.producciones){
 				//Se guardan los valores en el array
 				arrayPro.push(myObj.producciones[i]);
-			}//Fin del for exterior
+			}//Fin del for 
 			for(i in myObj.actores){
 				//Se guardan los valores en el array
 				arrayAct.push(myObj.actores[i]);
-			}//Fin del for exterior
+			}//Fin del for
 			for(i in myObj.directores){
 				//Se guardan los valores en el array
 				arrayDir.push(myObj.directores[i]);
-			}//Fin del for exterior
+			}//Fin del for
 			for(i in myObj.usuarios){
 				//Se guardan los valores en el array
 				arrayUser.push(myObj.usuarios[i]);
-			}//Fin del for exterior
+			}//Fin del for 
+			for(i in myObj.resources){
+				//Se guardan los valores en el array
+				arrayResources.push(myObj.resources[i]);
+			}//Fin del for 
+			//RELACIONES ENTRE LOS OBJETOS
+			for(i in myObj.categoryPro){
+				//Se guardan los valores en el array
+				arraycatPro.push(myObj.categoryPro[i]);
+			}//Fin del for 
+			for(i in myObj.repartoPro){
+				//Se guardan los valores en el array
+				arrayRePro.push(myObj.repartoPro[i]);
+			}//Fin del for 
+			for(i in myObj.directorPro){
+				//Se guardan los valores en el array
+				arrayDirPro.push(myObj.directorPro[i]);
+			}//Fin del for 
 			//Se añaden los valores a la base de datos
 			addValues("categorias",arrayCat);
 			addValues("producciones",arrayPro);
 			addValues("actores",arrayAct);
 			addValues("directores",arrayDir);
 			addValues("usuarios",arrayUser);
+			addValues("recursos",arrayResources);
+			//RELACIONES ENTRE LOS OBJETOS
+			addValues("categoryPro",arraycatPro);
+			addValues("repartoPro",arrayRePro);
+			addValues("directorPro",arrayDirPro);
 		}//FIn del if
 	};// fin de xmlhttp.onreadystatechange
 	xmlhttp.open("GET", "js/datos.json", true);
@@ -482,13 +515,13 @@ function showDirectors(){
 //Dado un actor muestra toda su información relacionada, incluida sus producciones.
 function showActor(){
 	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
-	var nombre = this.value || this.id;
+	var nombreActor = this.value || this.id;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
-	tituloContenido.innerHTML = nombre;
+	tituloContenido.innerHTML = nombreActor;
 	tituloContenido.style.display = "block";
 	//Actualiza las migas de pan
-	breadcrumb("Actor","Actores",nombre);
+	breadcrumb("Actor","Actores",nombreActor);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -507,7 +540,7 @@ function showActor(){
 		var db = event.target.result;         
 		var objectStore = db.transaction(["actores"],"readonly").objectStore("actores");
 		//Obtiene el objeto de la base de datos
-		var objeto = objectStore.get(nombre);
+		var objeto = objectStore.get(nombreActor);
 		objeto.onsuccess = function(event) {
 			var actor = objeto.result;
 			//Crea la tarjeta del actor en la zona central
@@ -538,7 +571,7 @@ function showActor(){
 			nacimiento.appendChild(document.createTextNode("Fecha de nacimiento:"));
 			var nacimientoDescript = document.createElement("p");
 			nacimientoDescript.setAttribute("class","card-text cajaDescripcion");
-			nacimientoDescript.appendChild(document.createTextNode(actor.born.toLocaleDateString()));			
+			nacimientoDescript.appendChild(document.createTextNode(new Date(actor.born).toLocaleDateString()));		
 			//Se crea la estructura de las tarjetas con appendChild
 			contenido.appendChild(tarjeta);
 			tarjeta.appendChild(borde);
@@ -552,24 +585,34 @@ function showActor(){
 			film.setAttribute("class","card-text cajaTitulo");
 			film.appendChild(document.createTextNode("Producciones en las que ha participado:"));
 			cuerpo.appendChild(film);
-			//Muestra las producciones en las que esta asignado el actor
-			var productions = video.getProductionsActor(actor);
-			var production = productions.next();
-			while (production.done !== true){
-				var filmDescript = document.createElement("p");
-				filmDescript.setAttribute("class","card-text cajaDescripcion");
-				filmDescript.appendChild(document.createTextNode("Titulo: "));
-				var proBtn = document.createElement("button");
-				proBtn.setAttribute("class","card-text btn btn-link ");
-				proBtn.setAttribute("value",production.value.title);
-				proBtn.appendChild(document.createTextNode(production.value.title));
-				proBtn.addEventListener("click", showProduction); 
-				filmDescript.appendChild(proBtn);
-				filmDescript.appendChild(document.createTextNode(". Papel: "+production.papel));
-				cuerpo.appendChild(filmDescript);
-				//Pasa a la siguiente produccion del actor
-				production = productions.next();
-			}//Fin del while iterador de producciones de un actor
+
+			//Abre la conexion con la base de datos
+			var request = indexedDB.open(nombreDB);
+			//Si ha salido bien
+			request.onsuccess = function(event) {
+				//Asigna el resultado a la variable db, que tiene la base de datos 
+				var db = event.target.result;         
+				var objectStore = db.transaction(["repartoPro"],"readonly").objectStore("repartoPro");
+				//Obtiene el objeto de la base de datos
+				var objeto = objectStore.get(nombreActor);
+				objeto.onsuccess = function(event) {
+					//Crea un array con las producciones de esa categoria
+					var producciones = event.target.result.productions;
+					for (var i = 0; i < producciones.length; i++) {
+						var filmDescript = document.createElement("p");
+						filmDescript.setAttribute("class","card-text cajaDescripcion");
+						filmDescript.appendChild(document.createTextNode("Titulo: "));
+						var proBtn = document.createElement("button");
+						proBtn.setAttribute("class","card-text btn btn-link ");
+						proBtn.setAttribute("value",producciones[i].produccion.title);
+						proBtn.appendChild(document.createTextNode(producciones[i].produccion.title));
+						proBtn.addEventListener("click", showProduction); 
+						filmDescript.appendChild(proBtn);
+						filmDescript.appendChild(document.createTextNode(". Papel: "+producciones[i].papel));
+						cuerpo.appendChild(filmDescript);
+					}//Fin del for
+				};//Fin de objeto.onsuccess
+			};//Fin de request.onsuccess
 		};//Fin de objeto.onsuccess
 	};//FIn de request.onsuccess	
 }//Fin de showActor
@@ -577,13 +620,13 @@ function showActor(){
 //Dado un director, muestra toda su información relacionada, incluida sus producciones
 function showDirector(){
 	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
-	var nombre = this.value || this.id;
+	var nombreDirector = this.value || this.id;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
-	tituloContenido.innerHTML = nombre;
+	tituloContenido.innerHTML = nombreDirector;
 	tituloContenido.style.display = "block";
 	//Actualiza las migas de pan
-	breadcrumb("Director","Directores",nombre);
+	breadcrumb("Director","Directores",nombreDirector);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -602,7 +645,7 @@ function showDirector(){
 		var db = event.target.result;         
 		var objectStore = db.transaction(["directores"],"readonly").objectStore("directores");
 		//Obtiene el objeto de la base de datos
-		var objeto = objectStore.get(nombre);
+		var objeto = objectStore.get(nombreDirector);
 		objeto.onsuccess = function(event) {
 			var director = objeto.result;
 			//Crea la tarjeta del director en la zona central
@@ -633,7 +676,7 @@ function showDirector(){
 			nacimiento.appendChild(document.createTextNode("Fecha de nacimiento:"));
 			var nacimientoDescript = document.createElement("p");
 			nacimientoDescript.setAttribute("class","card-text cajaDescripcion");
-			nacimientoDescript.appendChild(document.createTextNode(director.born.toLocaleDateString()));			
+			nacimientoDescript.appendChild(document.createTextNode(new Date(director.born).toLocaleDateString()));			
 			
 			//Se crea la estructura de las tarjetas con appendChild
 			contenido.appendChild(tarjeta);
@@ -649,23 +692,32 @@ function showDirector(){
 			film.setAttribute("class","card-text cajaTitulo");
 			film.appendChild(document.createTextNode("Producciones que ha dirigido:"));
 			cuerpo.appendChild(film);
-			//Muestra las producciones en las que esta asignado el director
-			var productions = video.getProductionsDirector(director);
-			var production = productions.next();
-			while (production.done !== true){
-				var filmDescript = document.createElement("p");
-				filmDescript.setAttribute("class","card-text cajaDescripcion");
-				filmDescript.appendChild(document.createTextNode("Titulo: "));
-				var proBtn = document.createElement("button");
-				proBtn.setAttribute("class","card-text btn btn-link ");
-				proBtn.setAttribute("value",production.value.title);
-				proBtn.appendChild(document.createTextNode(production.value.title));
-				proBtn.addEventListener("click", showProduction); 
-				filmDescript.appendChild(proBtn);
-				cuerpo.appendChild(filmDescript);
-				//Pasa a la siguiente produccion del director
-				production = productions.next();
-			}//Fin del while iterador de producciones de un director
+			//Abre la conexion con la base de datos
+			var request = indexedDB.open(nombreDB);
+			//Si ha salido bien
+			request.onsuccess = function(event) {
+				//Asigna el resultado a la variable db, que tiene la base de datos 
+				var db = event.target.result;         
+				var objectStore = db.transaction(["directorPro"],"readonly").objectStore("directorPro");
+				//Obtiene el objeto de la base de datos
+				var objeto = objectStore.get(nombreDirector);
+				objeto.onsuccess = function(event) {
+					//Crea un array con las producciones de esa categoria
+					var producciones = event.target.result.productions;
+					for (var i = 0; i < producciones.length; i++) {
+						var filmDescript = document.createElement("p");
+						filmDescript.setAttribute("class","card-text cajaDescripcion");
+						filmDescript.appendChild(document.createTextNode("Titulo: "));
+						var proBtn = document.createElement("button");
+						proBtn.setAttribute("class","card-text btn btn-link ");
+						proBtn.setAttribute("value",producciones[i].title);
+						proBtn.appendChild(document.createTextNode(producciones[i].title));
+						proBtn.addEventListener("click", showProduction); 
+						filmDescript.appendChild(proBtn);
+						cuerpo.appendChild(filmDescript);
+					}//Fin del for
+				};//Fin de objeto.onsuccess
+			};//Fin de request.onsuccess
 		};//Fin de objeto.onsuccess
 	};//FIn de request.onsuccess	
 }//Fin de showDirector
@@ -690,7 +742,7 @@ function showProductions(){
 	while (contenido.firstChild) {
 		contenido.removeChild(contenido.firstChild);
 	}
-
+	
 	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER LAS PRODUCCIONES DE UNA CATEGORIA
 	//Abre la conexion con la base de datos categorias
 	var request = indexedDB.open(nombreDB);
@@ -698,19 +750,17 @@ function showProductions(){
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
 		var db = event.target.result;         
-		var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
+		var objectStore = db.transaction(["categoryPro"],"readonly").objectStore("categoryPro");
 		var objeto = objectStore.get(nomCat);
 		//Abre un cursor para recorrer todos los objetos de la base de datos 
 		objeto.onsuccess = function(event) {
-			var categoria = event.target.result;
-			//Comienza el iterador de las producciones de esa categoria
-			var productions = video.getProductionsCategory(categoria);
-			var production = productions.next();
-			while (production.done !== true){
+			//Crea un array con las producciones de esa categoria
+			var producciones = event.target.result.productions;
+			for (var i = 0; i < producciones.length; i++) {
 				//Crea las tarjetas de las producciones en la zona central
 				var tarjeta = document.createElement("div");
 				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
-				tarjeta.setAttribute("id",production.value.title);	
+				tarjeta.setAttribute("id",producciones[i].title);	
 				tarjeta.addEventListener("click", showProduction);
 				var borde = document.createElement("div");
 				borde.setAttribute("class","card h-100");
@@ -720,7 +770,7 @@ function showProductions(){
 				imagen.setAttribute("class","card-img");
 				var tipo = document.createElement("span");
 				tipo.setAttribute("class","card-text");
-				if(production.value instanceof Movie){
+				if(producciones[i].tipo = "Movie"){
 					tipo.appendChild(document.createTextNode("Pelicula"));
 				}else{
 					tipo.appendChild(document.createTextNode("Serie"));
@@ -730,18 +780,18 @@ function showProductions(){
 				/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
 				//imagen.setAttribute("src","img/"+production.value.title+".jpg");
 				imagen.setAttribute("src","img/Portada.jpg");
-				imagen.setAttribute("alt",production.value.title);
+				imagen.setAttribute("alt",producciones[i].title);
 				var buttonTitle = document.createElement("button");
 				//id que sirve para recoger la produccion pulsada en el evento
 				buttonTitle.setAttribute("id","botonProduccion");
 				buttonTitle.setAttribute("type","button");
-				buttonTitle.setAttribute("value",production.value.title);
+				buttonTitle.setAttribute("value",producciones[i].title);
 				buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
-				buttonTitle.appendChild(document.createTextNode(production.value.title));	
+				buttonTitle.appendChild(document.createTextNode(producciones[i].title));	
 				var descripProduction = document.createElement("p");
 				descripProduction.setAttribute("class","card-text");
 				/* ESTA LINEA CAMBIA LA DESCRIPCION DE LAS TARJETAS */ 
-				descripProduction.appendChild(document.createTextNode(production.value.synopsis));
+				descripProduction.appendChild(document.createTextNode(producciones[i].synopsis));
 				var valoracion = document.createElement("div");
 				valoracion.setAttribute("class","card-footer");
 				var estrellas = document.createElement("small");
@@ -759,10 +809,7 @@ function showProductions(){
 				cuerpo.appendChild(descripProduction);
 				cuerpo.appendChild(valoracion);
 				valoracion.appendChild(estrellas);
-			
-				//Pasa a la siguiente produccion
-				production = productions.next();
-			}//fin del while iterador
+			}//Fin del for
 		};//Fin de objeto.onsuccess
 	};//Fin de request.onsuccess
 }//Fin de showProductions
@@ -830,7 +877,7 @@ function showProduction(){
 			publication.appendChild(document.createTextNode("Fecha de publicacion:"));
 			var publicationDescript = document.createElement("p");
 			publicationDescript.setAttribute("class","card-text cajaDescripcion");
-			publicationDescript.appendChild(document.createTextNode(produccion.publication.toLocaleDateString()));
+			publicationDescript.appendChild(document.createTextNode(new Date(produccion.publication).toLocaleDateString()));
 			/* ESTAS LINEAS SON PARA LA SIPNOSIS DE LA PRODUCCION */
 			var synopsis = document.createElement("p");
 			synopsis.setAttribute("class","card-text cajaTitulo");
@@ -840,7 +887,6 @@ function showProduction(){
 			synopsisDescript.appendChild(document.createTextNode(produccion.synopsis));
 
 			//Se crea la estructura de las tarjetas con appendChild
-			contenido.appendChild(tarjeta);
 			tarjeta.appendChild(borde);
 			borde.appendChild(cuerpo);
 			cuerpo.appendChild(imagen);
@@ -852,70 +898,82 @@ function showProduction(){
 			cuerpo.appendChild(synopsis);
 			cuerpo.appendChild(synopsisDescript);
 
-			//Para mostrar el director de la produccion
+			//MUESTRA EL DIRECTOR DE LA PRODUCCION
 			var encontrado = false;
-			var directores = video.directors;
-			var director = directores.next();
-			//Recorre todos los directores del sistema
-			while ((director.done !== true) && (!encontrado)){
-				//Para cada director hace un iterador con sus producciones
-				var productions = video.getProductionsDirector(director.value);
-				var production = productions.next();
-				while ((production.done !== true) && (!encontrado)){
-					//Si el titulo de la production del iterador es igual al titulo de la produccion en la que estamos
-					//muestra en esta produccion que es el director
-					if(production.value.title == produccion.title){
-						var dir = document.createElement("p");
-						dir.setAttribute("class","card-text cajaTitulo");
-						dir.appendChild(document.createTextNode("Dirigida por:"));
-						cuerpo.appendChild(dir);
-						var dirDescript = document.createElement("p");
-						dirDescript.setAttribute("class","card-text cajaDescripcion");
-						var dirBtn = document.createElement("button");
-						dirBtn.setAttribute("class","card-text btn btn-link ");
-						var nombre = director.value.name+" "+ director.value.lastName1;
-						if (director.value.lastName2 != null) {
-							nombre += " " + director.value.lastName2
-						}
-						dirBtn.setAttribute("value",nombre);
-						dirBtn.appendChild(document.createTextNode(nombre)); 
-						dirBtn.addEventListener("click", showDirector);
-						dirDescript.appendChild(dirBtn);
-						cuerpo.appendChild(dirDescript);
-	
-						encontrado = true;
-					}
-					//Pasa a la siguiente production del director
-					production = productions.next();
-				}//FIn del while iterador de producciones de un director
-				//Pasa al siguiente director
-				director = directores.next();
-			}//Fin del while iterador de directores
+			var request = indexedDB.open(nombreDB);
+			//Si ha salido bien
+			request.onsuccess = function(event) {
+				//Asigna el resultado a la variable db, que tiene la base de datos 
+				var db = event.target.result;         
+				var objectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+				//Abre un cursor para recorrer todos los objetos de la base de datos 
+				objectStore.openCursor().onsuccess = function(event) {
+					var cursor = event.target.result;
+					if((cursor) && (!encontrado)){
+						for (let i = 0; i < cursor.value.productions.length; i++) {
+							if(cursor.value.productions[i].title == titulo){
+								var dir = document.createElement("p");
+								dir.setAttribute("class","card-text cajaTitulo");
+								dir.appendChild(document.createTextNode("Dirigida por:"));
+								cuerpo.appendChild(dir);
+								var dirDescript = document.createElement("p");
+								dirDescript.setAttribute("class","card-text cajaDescripcion");
+								var dirBtn = document.createElement("button");
+								dirBtn.setAttribute("class","card-text btn btn-link ");
+								var nombre = director.value.name+" "+ director.value.lastName1;
+								if (director.value.lastName2 != null) {
+									nombre += " " + director.value.lastName2
+								}
+								dirBtn.setAttribute("value",nombre);
+								dirBtn.appendChild(document.createTextNode(nombre)); 
+								dirBtn.addEventListener("click", showDirector);
+								dirDescript.appendChild(dirBtn);
+								cuerpo.appendChild(dirDescript);
 			
-			//Para mostrar los actores de la produccion necesitamos otro iterador
-			var elenco = video.getCast(produccion);
-			var actor = elenco.next();
-			var act = document.createElement("p");
-			act.setAttribute("class","card-text cajaTitulo");
-			act.appendChild(document.createTextNode("Reparto"));
-			cuerpo.appendChild(act);
-			while (actor.done !== true){	
-				var actDescript = document.createElement("p");
-				actDescript.setAttribute("class","card-text cajaDescripcion");
-				var actBtn = document.createElement("button");
-				actBtn.setAttribute("class","card-text btn btn-link ");
-				var nombre = actor.value.name+" "+ actor.value.lastName1;
-				if (actor.value.lastName2 != null) {
-					nombre += " " + actor.value.lastName2
-				}
-				actBtn.setAttribute("value",nombre);
-				actBtn.appendChild(document.createTextNode(nombre)); 
-				actBtn.addEventListener("click", showActor);
-				actDescript.appendChild(actBtn);
-				actDescript.appendChild(document.createTextNode(". Papel: "+ actor.papel + ". Principal: " + actor.principal));
-				cuerpo.appendChild(actDescript);		
-				actor = elenco.next();
-			}
+								encontrado = true;
+							}
+						}
+						//Pasa al siguiente director
+						cursor.continue();
+					}//Fin del if
+				};		
+			};
+			
+			//MUESTRA EL REPARTO DE LA PRODUCCION
+			var request = indexedDB.open(nombreDB);
+			//Si ha salido bien
+			request.onsuccess = function(event) {
+				//Asigna el resultado a la variable db, que tiene la base de datos 
+				var db = event.target.result;         
+				var objectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+				//Abre un cursor para recorrer todos los objetos de la base de datos 
+				objectStore.openCursor().onsuccess = function(event) {
+					var cursor = event.target.result;
+					if(cursor){
+						for (let i = 0; i < cursor.value.productions.length; i++) {
+							if(cursor.value.productions[i].produccion.title == titulo){
+								var actDescript = document.createElement("p");
+								actDescript.setAttribute("class","card-text cajaDescripcion");
+								var actBtn = document.createElement("button");
+								actBtn.setAttribute("class","card-text btn btn-link ");
+								var nombre = actor.value.name+" "+ actor.value.lastName1;
+								if (actor.value.lastName2 != null) {
+									nombre += " " + actor.value.lastName2
+								}
+								actBtn.setAttribute("value",nombre);
+								actBtn.appendChild(document.createTextNode(nombre)); 
+								actBtn.addEventListener("click", showActor);
+								actDescript.appendChild(actBtn);
+								actDescript.appendChild(document.createTextNode(". Papel: "+ actor.papel + ". Principal: " + actor.principal));
+								cuerpo.appendChild(actDescript);		
+								actor = elenco.next();
+							}
+						}
+						//Pasa al siguiente director
+						cursor.continue();
+					}//Fin del if
+				};		
+			};
 
 			//Muestra el boton que abre una ventana nueva para mostrar los recursos
 			var resourceBtn = document.createElement("button");
@@ -925,6 +983,7 @@ function showProduction(){
 			resourceBtn.appendChild(document.createTextNode("Mostrar recursos")); 
 			resourceBtn.addEventListener("click", abrirVentana);
 			cuerpo.appendChild(resourceBtn);
+			contenido.appendChild(tarjeta);
 		};//Fin de objeto.onsuccess
 	};//FIn de request.onsuccess
 }//Fin de showProduction
@@ -1000,90 +1059,99 @@ function showResource(){
 	ventana.document.title = "Recursos de " + tituloProduccion.textContent;
 
 	var encontrado = false;
-	var producciones = video.productions;
-	var produccion = producciones.next();
-	while ((produccion.done !== true) && (!encontrado)){
-		//Compara el titulo de la produccion del iterador con el titulo que hay en el h2 de la tarjeta
-		if (produccion.value.title == tituloProduccion.textContent) {
-			//Si la produccion es una movie tendra unos parametros distintos a las series
-			if(produccion.value instanceof Movie){
-				//Si es distinto de null pone el recurso de la produccion
-				if(produccion.value.resource != null){
-					
-					var duration = document.createElement("p");
-					duration.setAttribute("class","cajaTitulo");
-					duration.appendChild(document.createTextNode("Duracion: "));
-					var durationDescript = document.createElement("p");
-					durationDescript.setAttribute("class","cajaDescripcion");
-					durationDescript.appendChild(document.createTextNode(produccion.value.resource.duration+" minutos"));
-					var audio = document.createElement("p");
-					audio.setAttribute("class","cajaTitulo");
-					audio.appendChild(document.createTextNode("Audio: "));
-					var audioDescript = document.createElement("p");
-					audioDescript.setAttribute("class","cajaDescripcion");
-					audioDescript.appendChild(document.createTextNode(produccion.value.resource.audios));
-					var subtitles = document.createElement("p");
-					subtitles.setAttribute("class","cajaTitulo");
-					subtitles.appendChild(document.createTextNode("Subtitulos: "));
-					var subtitlesDescript = document.createElement("p");
-					subtitlesDescript.setAttribute("class","cajaDescripcion");
-					subtitlesDescript.appendChild(document.createTextNode(produccion.value.resource.subtitles));
-					var link = document.createElement("p");
-					link.setAttribute("class","cajaTitulo");
-					link.appendChild(document.createTextNode("Enlaces: "));
-					var linkDescript = document.createElement("p");
-					linkDescript.setAttribute("class","cajaDescripcion");
-					var linkHref = document.createElement("a");
-					linkHref.setAttribute("href",produccion.value.resource.link);
-					linkHref.appendChild(document.createTextNode(produccion.value.resource.link));
-					linkDescript.appendChild(linkHref);
-				}
-				//Si es distinto de null pone la localizacion de la produccion
-				if(produccion.value.locations != null){
-					var locations = document.createElement("p");
-					locations.setAttribute("class","cajaTitulo");
-					locations.appendChild(document.createTextNode("Localizacion:"));
-					var locationsDescript = document.createElement("p");
-					locationsDescript.setAttribute("class","cajaDescripcion");
-					locationsDescript.appendChild(document.createTextNode(produccion.value.locations));
-				}
-			}//Fin del if del instanceof
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var objectStore = db.transaction(["producciones"],"readwrite").objectStore("producciones");
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objectStore.openCursor().onsuccess = function(event) {
+			var cursor = event.target.result;
+			if((cursor) && (!encontrado)){
+				//Compara el titulo de la produccion del iterador con el titulo que hay en el h2 de la tarjeta
+				if (cursor.value.title == tituloProduccion.textContent) {
+					//Si la produccion es una movie tendra unos parametros distintos a las series
+					if(cursor.value.tipo == "Movie"){
+						//Si es distinto de null pone el recurso de la produccion
+						if(cursor.value.resource != null){
+							
+							var duration = document.createElement("p");
+							duration.setAttribute("class","cajaTitulo");
+							duration.appendChild(document.createTextNode("Duracion: "));
+							var durationDescript = document.createElement("p");
+							durationDescript.setAttribute("class","cajaDescripcion");
+							durationDescript.appendChild(document.createTextNode(cursor.value.resource.duration+" minutos"));
+							var audio = document.createElement("p");
+							audio.setAttribute("class","cajaTitulo");
+							audio.appendChild(document.createTextNode("Audio: "));
+							var audioDescript = document.createElement("p");
+							audioDescript.setAttribute("class","cajaDescripcion");
+							audioDescript.appendChild(document.createTextNode(cursor.value.resource.audios));
+							var subtitles = document.createElement("p");
+							subtitles.setAttribute("class","cajaTitulo");
+							subtitles.appendChild(document.createTextNode("Subtitulos: "));
+							var subtitlesDescript = document.createElement("p");
+							subtitlesDescript.setAttribute("class","cajaDescripcion");
+							subtitlesDescript.appendChild(document.createTextNode(cursor.value.resource.subtitles));
+							var link = document.createElement("p");
+							link.setAttribute("class","cajaTitulo");
+							link.appendChild(document.createTextNode("Enlaces: "));
+							var linkDescript = document.createElement("p");
+							linkDescript.setAttribute("class","cajaDescripcion");
+							var linkHref = document.createElement("a");
+							linkHref.setAttribute("href",cursor.value.resource.link);
+							linkHref.appendChild(document.createTextNode(cursor.value.resource.link));
+							linkDescript.appendChild(linkHref);
+						}
+						//Si es distinto de null pone la localizacion de la produccion
+						if(cursor.value.locations != null){
+							var locations = document.createElement("p");
+							locations.setAttribute("class","cajaTitulo");
+							locations.appendChild(document.createTextNode("Localizacion:"));
+							var locationsDescript = document.createElement("p");
+							locationsDescript.setAttribute("class","cajaDescripcion");
+							locationsDescript.appendChild(document.createTextNode("Longitud: "+cursor.value.locations.longitude+". Latitud: "+cursor.value.locations.latitude));
+						}
+					}//Fin del if del instanceof
 
-			//Pinta todo en la nueva ventana
-			var tituloProdu = ventana.document.getElementById("tituloZona");
-			tituloProdu.innerHTML = tituloProduccion.textContent;
-			if(produccion.value.resource != null){
-				contenidoVentana.appendChild(duration);
-				contenidoVentana.appendChild(durationDescript);
-				contenidoVentana.appendChild(audio);
-				contenidoVentana.appendChild(audioDescript);
-				contenidoVentana.appendChild(subtitles);
-				contenidoVentana.appendChild(subtitlesDescript);
-				contenidoVentana.appendChild(link);
-				contenidoVentana.appendChild(linkDescript);
-			}
-			if(produccion.value.locations != null){
-				contenidoVentana.appendChild(locations);
-				contenidoVentana.appendChild(locationsDescript);
-			}
-			if(produccion.value.season != null){
-				//Si tiene temporadas las muestra
-				for (let index = 0; index < produccion.value.season.length; index++) {
-					var season = document.createElement("p");
-					season.setAttribute("class","cajaTitulo");
-					season.appendChild(document.createTextNode("Temporada "+(index+1)+":"));
-					var seasonDescrip = document.createElement("p");
-					seasonDescrip.setAttribute("class","cajaDescripcion");
-					seasonDescrip.appendChild(document.createTextNode(produccion.value.season[index].episodes));
-					contenidoVentana.appendChild(season);
-					contenidoVentana.appendChild(seasonDescrip);	
-				}//Fin del for
-			}//Fin del if de season	
-		}//Fin del if
-		//Pasa a la siguiente produccion
-		produccion = producciones.next();
-	}//Fin del while
-
+					//Pinta todo en la nueva ventana
+					var tituloProdu = ventana.document.getElementById("tituloZona");
+					tituloProdu.innerHTML = tituloProduccion.textContent;
+					if(cursor.value.resource != null){
+						contenidoVentana.appendChild(duration);
+						contenidoVentana.appendChild(durationDescript);
+						contenidoVentana.appendChild(audio);
+						contenidoVentana.appendChild(audioDescript);
+						contenidoVentana.appendChild(subtitles);
+						contenidoVentana.appendChild(subtitlesDescript);
+						contenidoVentana.appendChild(link);
+						contenidoVentana.appendChild(linkDescript);
+					}
+					if(cursor.value.locations != null){
+						contenidoVentana.appendChild(locations);
+						contenidoVentana.appendChild(locationsDescript);
+					}
+					if(cursor.value.season != null){
+						//Si tiene temporadas las muestra
+						for (let index = 0; index < cursor.value.season.length; index++) {
+							var season = document.createElement("p");
+							season.setAttribute("class","cajaTitulo");
+							season.appendChild(document.createTextNode("Temporada "+(index+1)+":"));
+							var seasonDescrip = document.createElement("p");
+							seasonDescrip.setAttribute("class","cajaDescripcion");
+							seasonDescrip.appendChild(document.createTextNode(cursor.value.season[index].episodes));
+							contenidoVentana.appendChild(season);
+							contenidoVentana.appendChild(seasonDescrip);	
+						}//Fin del for
+					}//Fin del if de season	
+					encontrado = true;
+				}//Fin del if
+				//Pasa a la siguiente categoria
+				cursor.continue();
+			}//Fin del if
+		};		
+	};
 }//Fin de showResource
 
 //Funcion que llama a todas las funciones que necesita el sistema

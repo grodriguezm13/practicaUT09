@@ -10,7 +10,16 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
-Verion 0.0.2
+Version 0.0.3
+- Las relaciones se han añadido al fichero JSON
+- Se han creado las tablas de relaciones
+- Solucionado un problemas con las fechas que da JSON
+- Solucionado un error que saltaba al mostrar produccion
+- Se han añadido los recursos al fichero JSON y las tablas
+- Se ha modificado la insercion y borrado de los recursos
+- Se ha cambiado la forma de mostrar los recursos al eliminar
+
+Version 0.0.2
 - Se han añadido los usuarios al fichero JSON
 - Cambios menores
 
