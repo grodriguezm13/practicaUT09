@@ -10,9 +10,14 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.0.6
+- Cambios menores en la interfaz
+- Se ha arreglado fallos al mostrar repartos y director de una produccion
+- Ahora el boton crear fichero, sube un fichero JSON con los datos de las bases de datos al servidor
+
 Version 0.0.5
 - Se ha creado un boton para ver todas las producciones del sistema
-- Se ha arreglado un fallo al mostrar la etiqueta del tipo de produccion a la hora de m,ostrar las tarjetas
+- Se ha arreglado un fallo al mostrar la etiqueta del tipo de produccion a la hora de mostrar las tarjetas
 - Solucionado un error que impedia agregar los recursos a las producciones al crearlas
 
 Version 0.0.4

@@ -60,7 +60,7 @@ button.list-group-item, button.nav-link{
   display: block;
 }
 
-#menuEdicion, #divMovie, #divSerie, #divInputDir, #divActor, #exito{
+#menuEdicion, #divMovie, #divSerie, #divInputDir, #divActor, #exito, #btnFichero{
   display: none;
 }
 
@@ -75,7 +75,7 @@ nav.migas {
 
 .zoom:hover { transform: scale(1.1); }
 
-.card, .botonMenu{
+.cardZ, .botonMenu{
   cursor: pointer;
   border: #007bff 1px solid;
 }

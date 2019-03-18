@@ -7,6 +7,7 @@ function validarUsuario(){
 	var pass = document.forms["inicioSesion"]["passForm"].value;
 	var error = document.getElementById("usuarioForm").nextSibling.nextSibling;
 	var menuExtra = document.getElementById("menuEdicion");
+	var btnFichero = document.getElementById("btnFichero");
 	var encontrado = false;
 
 	//Si ha introducido algo en los campos
@@ -27,6 +28,7 @@ function validarUsuario(){
 						setCookie("userMail", usuario.email, 1);
 						encontrado = true;
 						menuExtra.style.display = "flex";
+						btnFichero.style.display = "block";
 						error.style.display = "none";
 						checkCookie();
 					}//Fin del if
@@ -84,12 +86,14 @@ function checkCookie() {
 		btnCuenta.style.display = "block";
 		formInicio.style.display = "none";
 		menuExtra.style.display = "flex";
+		btnFichero.style.display = "block";
 	} else {
 		//Pone todo oculto y resetea los campos de inicio de sesion, por si se ha cerrado sesion
 		saludo.style.display = "none";
 		menuExtra.style.display = "none";
 		btnCuenta.style.display = "none";
 		formInicio.style.display = "block";
+		btnFichero.style.display = "none";
 		document.forms["inicioSesion"]["usuarioForm"].value = "";
 		document.forms["inicioSesion"]["passForm"].value = "";
 	}

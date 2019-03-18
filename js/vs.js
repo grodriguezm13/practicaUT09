@@ -149,7 +149,7 @@ function breadcrumb(lugar, anterior, valor){
 	while (migas.firstChild) {
 		migas.removeChild(migas.firstChild);
 	}
-	//Añade el boton de cerrar ventanas
+	//Añade el boton de cerrar ventanas y crear fichero
 	var liVentanas = document.createElement("li");
 	liVentanas.setAttribute("class","nav-item ml-auto");
 	liVentanas.setAttribute("style","display: none");
@@ -265,7 +265,7 @@ function showHomePage(){
 				tarjeta.setAttribute("id",categoria.name);	
 				tarjeta.addEventListener("click", showProductions);
 				var borde = document.createElement("div");
-				borde.setAttribute("class","card h-100");
+				borde.setAttribute("class","card cardZ h-100");
 				var cuerpo = document.createElement("div");
 				cuerpo.setAttribute("class","card-body");
 				var imagen = document.createElement("img");
@@ -392,7 +392,7 @@ function showActors(){
 				tarjeta.setAttribute("id",nombre);	
 				tarjeta.addEventListener("click", showActor);
 				var borde = document.createElement("div");
-				borde.setAttribute("class","card h-100");
+				borde.setAttribute("class","card cardZ h-100");
 				var cuerpo = document.createElement("div");
 				cuerpo.setAttribute("class","card-body");
 				var imagen = document.createElement("img");
@@ -472,7 +472,7 @@ function showDirectors(){
 				tarjeta.setAttribute("id",nombre);	
 				tarjeta.addEventListener("click", showDirector);
 				var borde = document.createElement("div");
-				borde.setAttribute("class","card h-100");
+				borde.setAttribute("class","card cardZ h-100");
 				var cuerpo = document.createElement("div");
 				cuerpo.setAttribute("class","card-body");
 				var imagen = document.createElement("img");
@@ -761,7 +761,7 @@ function showAllProductions(){
 				tarjeta.setAttribute("id",produccion.value.title);	
 				tarjeta.addEventListener("click", showProduction);
 				var borde = document.createElement("div");
-				borde.setAttribute("class","card h-100");
+				borde.setAttribute("class","card cardZ h-100");
 				var cuerpo = document.createElement("div");
 				cuerpo.setAttribute("class","card-body");
 				var imagen = document.createElement("img");
@@ -856,7 +856,7 @@ function showProductions(){
 				tarjeta.setAttribute("id",producciones[i].title);	
 				tarjeta.addEventListener("click", showProduction);
 				var borde = document.createElement("div");
-				borde.setAttribute("class","card h-100");
+				borde.setAttribute("class","card cardZ h-100");
 				var cuerpo = document.createElement("div");
 				cuerpo.setAttribute("class","card-body");
 				var imagen = document.createElement("img");
@@ -932,9 +932,9 @@ function showProduction(){
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
 		var db = event.target.result;         
-		var objectStore = db.transaction(["producciones"],"readonly").objectStore("producciones");
+		var objectStore = db.transaction(["producciones","directorPro","repartoPro"],"readonly");
 		//Obtiene el objeto de la base de datos
-		var objeto = objectStore.get(titulo);
+		var objeto = objectStore.objectStore("producciones").get(titulo);
 		objeto.onsuccess = function(event) {
 			var produccion = objeto.result;
 			//Crea las tarjetas de las producciones en la zona central
@@ -990,93 +990,82 @@ function showProduction(){
 			cuerpo.appendChild(publicationDescript);
 			cuerpo.appendChild(synopsis);
 			cuerpo.appendChild(synopsisDescript);
-
-			//MUESTRA EL DIRECTOR DE LA PRODUCCION
+		 
 			var encontrado = false;
-			var request = indexedDB.open(nombreDB);
-			//Si ha salido bien
-			request.onsuccess = function(event) {
-				//Asigna el resultado a la variable db, que tiene la base de datos 
-				var db = event.target.result;         
-				var objectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
-				//Abre un cursor para recorrer todos los objetos de la base de datos 
-				objectStore.openCursor().onsuccess = function(event) {
-					var cursor = event.target.result;
-					if((cursor) && (!encontrado)){
-						for (let i = 0; i < cursor.value.productions.length; i++) {
-							if(cursor.value.productions[i].title == titulo){
-								var dir = document.createElement("p");
-								dir.setAttribute("class","card-text cajaTitulo");
-								dir.appendChild(document.createTextNode("Dirigida por:"));
-								cuerpo.appendChild(dir);
-								var dirDescript = document.createElement("p");
-								dirDescript.setAttribute("class","card-text cajaDescripcion");
-								var dirBtn = document.createElement("button");
-								dirBtn.setAttribute("class","card-text btn btn-link ");
-								var nombre = director.value.name+" "+ director.value.lastName1;
-								if (director.value.lastName2 != null) {
-									nombre += " " + director.value.lastName2
-								}
-								dirBtn.setAttribute("value",nombre);
-								dirBtn.appendChild(document.createTextNode(nombre)); 
-								dirBtn.addEventListener("click", showDirector);
-								dirDescript.appendChild(dirBtn);
-								cuerpo.appendChild(dirDescript);
-			
-								encontrado = true;
-							}
+			var objectDirectorPro = objectStore.objectStore("directorPro");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectDirectorPro.openCursor().onsuccess = function(event) {
+				var director = event.target.result;
+				if((director) && (!encontrado)){
+					for (var i = 0; i < director.value.productions.length; i++) {
+						var produccion = director.value.productions[i];
+						if(produccion.title == titulo.textContent){
+							var dir = document.createElement("p");
+							dir.setAttribute("class","card-text cajaTitulo");
+							dir.appendChild(document.createTextNode("Dirigida por:"));
+							cuerpo.appendChild(dir);
+							var dirDescript = document.createElement("p");
+							dirDescript.setAttribute("class","card-text cajaDescripcion");
+							var dirBtn = document.createElement("button");
+							dirBtn.setAttribute("class","card-text btn btn-link ");
+							dirBtn.setAttribute("value",director.value.completo);
+							dirBtn.appendChild(document.createTextNode(director.value.completo)); 
+							dirBtn.addEventListener("click", showDirector);
+							dirDescript.appendChild(dirBtn);
+							cuerpo.appendChild(dirDescript);
+											
+							encontrado = true;
 						}
-						//Pasa al siguiente director
-						cursor.continue();
-					}//Fin del if
-				};		
-			};
-			
-			//MUESTRA EL REPARTO DE LA PRODUCCION
-			var request = indexedDB.open(nombreDB);
-			//Si ha salido bien
-			request.onsuccess = function(event) {
-				//Asigna el resultado a la variable db, que tiene la base de datos 
-				var db = event.target.result;         
-				var objectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
-				//Abre un cursor para recorrer todos los objetos de la base de datos 
-				objectStore.openCursor().onsuccess = function(event) {
-					var cursor = event.target.result;
-					if(cursor){
-						for (let i = 0; i < cursor.value.productions.length; i++) {
-							if(cursor.value.productions[i].produccion.title == titulo){
-								var actDescript = document.createElement("p");
-								actDescript.setAttribute("class","card-text cajaDescripcion");
-								var actBtn = document.createElement("button");
-								actBtn.setAttribute("class","card-text btn btn-link ");
-								var nombre = actor.value.name+" "+ actor.value.lastName1;
-								if (actor.value.lastName2 != null) {
-									nombre += " " + actor.value.lastName2
-								}
-								actBtn.setAttribute("value",nombre);
-								actBtn.appendChild(document.createTextNode(nombre)); 
-								actBtn.addEventListener("click", showActor);
-								actDescript.appendChild(actBtn);
-								actDescript.appendChild(document.createTextNode(". Papel: "+ actor.papel + ". Principal: " + actor.principal));
-								cuerpo.appendChild(actDescript);		
-								actor = elenco.next();
-							}
-						}
-						//Pasa al siguiente director
-						cursor.continue();
-					}//Fin del if
-				};		
-			};
+					}
+					//Pasa al siguiente director
+					director.continue();
+				}//Fin del if
+			};	
 
-			//Muestra el boton que abre una ventana nueva para mostrar los recursos
-			var resourceBtn = document.createElement("button");
-			//Pone el value al boton con el titulo de la produccion para poder identificar la ventana que crea el boton
-			resourceBtn.setAttribute("value",titulo.textContent);
-			resourceBtn.setAttribute("class","card-text btn btn-primary btn-lg btn-block");
-			resourceBtn.appendChild(document.createTextNode("Mostrar recursos")); 
-			resourceBtn.addEventListener("click", abrirVentana);
-			cuerpo.appendChild(resourceBtn);
-			contenido.appendChild(tarjeta);
+
+			var arraRep = new Array();
+			var objectReparto = objectStore.objectStore("repartoPro");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectReparto.openCursor().onsuccess = function(event) {
+				var reparto = event.target.result;
+				if(reparto){
+					for (var i = 0; i < reparto.value.productions.length; i++) {
+						var produc = reparto.value.productions[i];
+						if(produc.produccion.title == titulo.textContent){
+							arraRep.push({completo: reparto.value.completo, pro: produc});		
+						}
+					}
+					//Pasa al siguiente director
+					reparto.continue();
+				}//Fin del if
+			};
+			objectStore.oncomplete = function (event){
+				var rep = document.createElement("p");
+				rep.setAttribute("class","card-text cajaTitulo");
+				rep.appendChild(document.createTextNode("Reparto de la produccion:"));
+				cuerpo.appendChild(rep);
+				for (let i = 0; i < arraRep.length; i++) {
+					var actDescript = document.createElement("p");
+					actDescript.setAttribute("class","card-text cajaDescripcion");
+					var actBtn = document.createElement("button");
+					actBtn.setAttribute("class","card-text btn btn-link ");
+					actBtn.setAttribute("value",arraRep[i].completo);
+					actBtn.appendChild(document.createTextNode(arraRep[i].completo)); 
+					actBtn.addEventListener("click", showActor);
+					actDescript.appendChild(actBtn);
+					actDescript.appendChild(document.createTextNode(". Papel: "+ arraRep[i].pro.papel + ". Principal: " + arraRep[i].pro.principal));
+					cuerpo.appendChild(actDescript);
+				}//Fin del for
+				//Muestra el boton que abre una ventana nueva para mostrar los recursos
+				var resourceBtn = document.createElement("button");
+				//Pone el value al boton con el titulo de la produccion para poder identificar la ventana que crea el boton
+				resourceBtn.setAttribute("value",titulo.textContent);
+				resourceBtn.setAttribute("class","card-text btn btn-primary btn-lg btn-block");
+				resourceBtn.appendChild(document.createTextNode("Mostrar recursos")); 
+				resourceBtn.addEventListener("click", abrirVentana);
+				cuerpo.appendChild(resourceBtn);
+				contenido.appendChild(tarjeta);
+			};
 		};//Fin de objeto.onsuccess
 	};//FIn de request.onsuccess
 }//Fin de showProduction
@@ -1246,6 +1235,123 @@ function showResource(){
 		};		
 	};
 }//Fin de showResource
+
+/* FUNCIONES AÑADIDAS EN LAPRACTICA 9 */
+//Serializa todos los objetos de la base de datos y lo manda en un fichero al servidor
+function crearJSON(){
+	var arrayCategories = new Array();
+	var arrayActors = new Array();
+	var arrayDirectors = new Array();
+	var arrayProductions = new Array();
+	var arrayResources = new Array();
+	var arrayCategoryPro = new Array();
+	var arrayRepartoPro = new Array();
+	var arrayDirectorPro = new Array();
+	//Abre la conexion con la base de datos
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var tablas = db.transaction(["categorias","actores","directores","producciones","recursos","categoryPro","repartoPro","directorPro"],"readonly");
+		//Se añaden al array los datos de la base de datos
+		var datosCategoria = tablas.objectStore("categorias");
+		datosCategoria.openCursor().onsuccess = function(event){
+			var categoria = event.target.result;
+			if(categoria){
+				arrayCategories.push(categoria.value);
+				categoria.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+		var datosActores = tablas.objectStore("actores");
+		datosActores.openCursor().onsuccess = function(event){
+			var actor = event.target.result;
+			if(actor){
+				arrayActors.push(actor.value);
+				actor.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+		var datosDirectores = tablas.objectStore("directores");
+		datosDirectores.openCursor().onsuccess = function(event){
+			var director = event.target.result;
+			if(director){
+				arrayDirectors.push(director.value);
+				director.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+		var datosProducciones = tablas.objectStore("producciones");
+		datosProducciones.openCursor().onsuccess = function(event){
+			var production = event.target.result;
+			if(production){
+				arrayProductions.push(production.value);
+				production.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+		var datosRecursos = tablas.objectStore("recursos");
+		datosRecursos.openCursor().onsuccess = function(event){
+			var resource = event.target.result;
+			if(resource){
+				arrayResources.push(resource.value);
+				resource.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+		var datosCatPro = tablas.objectStore("categoryPro");
+		datosCatPro.openCursor().onsuccess = function(event){
+			var catPro = event.target.result;
+			if(catPro){
+				arrayCategoryPro.push(catPro.value);
+				catPro.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+		var datosRepPro = tablas.objectStore("repartoPro");
+		datosRepPro.openCursor().onsuccess = function(event){
+			var repPro = event.target.result;
+			if(repPro){
+				arrayRepartoPro.push(repPro.value);
+				repPro.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+		var datosDirPro = tablas.objectStore("directorPro");
+		datosDirPro.openCursor().onsuccess = function(event){
+			var dirPro = event.target.result;
+			if(dirPro){
+				arrayDirectorPro.push(dirPro.value);
+				dirPro.continue();
+			}//Fin del if
+		};//Fin de openCursor().onsuccess
+
+		//Cuando ha terminado crea un objeto con todas los datos de las tablas
+		tablas.oncomplete = function(event){
+			var datos = {
+				user: getCookie("userMail"),
+				categorias: arrayCategories,
+				producciones: arrayProductions,
+				actores: arrayActors,
+				directores: arrayDirectors,
+				resources: arrayResources,
+				categoryPro: arrayCategoryPro,
+				directorPro: arrayDirectorPro,
+				repartoPro: arrayRepartoPro
+			}//FIn de datos
+
+			var xmlhttp = new XMLHttpRequest();
+			data = JSON.stringify(datos);
+			
+			xmlhttp.onreadystatechange = function(){
+				//Si todo esta correcto
+				if ((this.readyState == 4) && (this.status == 200)){
+					exito();
+				}//FIn del if
+			};
+			xmlhttp.open('POST', "php/fichero.php", true);
+			xmlhttp.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+			xmlhttp.send('data=' + data);
+		};//FIn de oncomplete
+	};//Fin de request.onsuccess
+	
+	
+}//FIn de crearJSON
+
 
 //Funcion que llama a todas las funciones que necesita el sistema
 function init(){
